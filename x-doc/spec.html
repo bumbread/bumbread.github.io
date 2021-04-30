@@ -1,0 +1,135 @@
+<!DOCTYPE html><html><head><meta charset=utf-8><meta name=referrer content=no-referrer><meta name=viewport content="width=device-width, initial-scale=0.7"><link rel=stylesheet href=/styles.css><link rel=favicon href=/favicon.ico><link rel=apple-touch-icon href=/favicon.ico><body><p>﻿<h1>X language specification</h1><p>This is a specification for a language called <strong>X</strong> developed by <a href=https://github.com/bumbread/>bumbread</a>. This document covers all the details about the syntax, semantics and behaviour of the language.<p>In particular, it will be useful for:<ul><li>Compile writers, who wish to correctly implement the language compilation<li>People, who write syntax files for their editors' token highlighters<li>The people interested in the basic set of features of the language.<li>The <strong>X</strong> language programmers.</ul><p>This document does not cover quick guide to the basic syntax and the examples are kept to minimum. Nevertheless each syntax is showcased at least once, so a person interested in knowing how the language looks like can skim through the file.<p>This document comments about all the edge cases objectively, without commenting on what the programmer should and shouldn't do. Every strict "shouldn't" was already encompassed in the language's rules.<h2>1. Lexical syntax</h2><h3>1.0 Possible ideas (to be removed)</h3><ul><li>Imaginary literals<li>For loops<li>Unsigned, sized types<li></ul><h3>1.1. The notation</h3><p>In order to make the discussion about language's syntax easier and make the definition of syntax more rigorous, I am definiting a <a href=https://en.wikipedia.org/wiki/Formal_grammar>formal grammar</a> notation. This notation is pretty similar to <strong>EBNF</strong>, but it has some minor changes.<p>In my notation, every production rule is written as follows.<pre><code class=language-ebnf>&LTproduction-name> = &LTexpression>
+</code></pre><p>At the left-hand side, the name of production (containing lowercase ASCII letters, <code>_</code> (underscore), <code>-</code> (dash) and digits) is written. Each rule specifies a replacement syntax. The name on the right-hand side can be replaced with <code>&LTexpression></code> on the left-hand side.<p>An <code>&LTexpression></code> can be a <code>string</code>, for example. Strings are enclosed <code>"</code> (quotation mark) characters. For example, to define the <code>if</code> keyword one could write the following production rule:<pre><code class=language-ebnf>if-keyword = "if"
+</code></pre><p><strong>Alternatives</strong> represent set of several possible productions. Exactly one alternative from the set has to be chosen. Alternatives are separated by the <code>|</code> (pipe) symbol. For example, I can define production rule for a vowel as follows:<pre><code class=language-ebnf>vowel = "a" | "i" | "u" | "e" | "o"
+</code></pre><p>Sometimes due to aesthetic reasons I will put newline before every <code>|</code> symbol.<pre><code class=language-ebnf>vowel = "a" 
+      | "i"
+      | "u"
+      | "e"
+      | "o"
+</code></pre><p><strong>Sequences</strong> represent expressions following one by another in order. Expressions can be sequenced by writing them one after another, without separators (unlike <strong>EBNF</strong> the comma isn't used in between expressions). For example, rewriting the earlier <code>if</code> keyword example we could get:<pre><code class=language-ebnf>if-keyword = "i" "f"
+</code></pre><p>The sequence "operation" has higher "precedence" than alternative operation. The production for either string <code>"ab"</code> or <code>"cd"</code> can be defined as follows:<pre><code class=language-ebnf>random-string = "a" "b"
+              | "c" "d"
+</code></pre><p>Sometimes it is useful to make a sequence of alternatives instead. For example if I want to sequence string <code>"a"</code> with either <code>"0"</code> or <code>"1"</code> I could write:<pre><code class=language-ebnf>random-string = "a" ("0" | "1")
+</code></pre><p>This is what <strong>grouping</strong> operator is.<p>Besides the normal grouping, this notation also has <strong>repetition</strong> operator that repeats the production finitely many times. To repeat a production enclose it in braces (<code>{}</code>) And <strong>optional</strong> operator that marks certain production as being optional. To mark production as optional enclose it with brackets (<code>[]</code>). For example I could define a decimal number as follows:<pre><code class=language-ebnf>decimal-digit = "0" | "1" | "2" | "3" | "4"
+              | "5" | "6" | "7" | "8" | "9"
+
+decimal-number = decimal-digit {decimal-digit}
+</code></pre><p>This first defines a set of alternatives for <code>decimal-digits</code> and then defines <code>decimal-number</code> as at least one decimal digit followed by some amount (including zero) digits. So <code>0</code> satisfies this production rule.<p>For strings I can specify an <strong>escape sequence</strong>, that will specify unicode codepoint. It has a form of <code>\u+{x}</code>, where <code>x</code> is a hexadecimal character. For example, <code>"\u+30"</code>, <code>"\u+030"</code> and <code>"\u+0030"</code> all mean the same character - <code>"0"</code><p>Also the <strong>range</strong> operator is used. The syntax looks like <code>"character1".."character2"</code>. This takes single-character strings, and it means all the characters with codepoints in between codepoint of <code>"character1"</code> up until and including the codepoint of <code>"character2"</code>.<p>For example, the <code>decimal-digits</code> production from before could be written as:<pre><code class=language-ebnf>decimal-digit = "\u+30".."\u+39"
+</code></pre><p>The definition for the grammar in this grammar is therefore:<pre><code class=language-ebnf>decimal-digit = "0".."9"
+ascii-letter  = "a".."z" | "A".."Z"
+identifier    = { ascii-letter | decimal-digits | "-" | "_" }
+
+ascii-symbol  = "\u+00".."\u+7f"
+hex-digit     = "a".."f" | "A".."F" | "0".."9"
+hex-number    = hex-digit | {hex-digit}
+string        = "\u+22" (ascii-symbol | "\" "u+" hex-number) "\u+22"
+
+production-rule = identifier "=" alternative
+alternative     = sequence   {"|" sequence  }
+sequence        = expression {    expression}
+expression      = string
+                | identifier
+                | "(" alternative ")"
+                | "{" alternative "}"
+                | "[" alternative "]"
+</code></pre><h3>1.2. The source encoding</h3><p>The <strong>X</strong> source file must be represented by a sequence of characters encoded using a single encoding. The encoding of the source file <strong>must</strong> be utf-8.<p>The national symbols and other codepoints above ASCII range (<code>"\u+00".."0+7f"</code>) <strong>can only appear inside comments, strings or char literals</strong>.<p>The text is not canonicalized. A codepoint representing decorated letter is different from two codepoints, one for the letter and one for the diacritics. So <code>だ</code> is different from <code>た</code> followed by the dakuten (<code>u+3099</code>) character.<p>In general, the two characters are different if the codepoints representing them are different. That also implies case-sensitivity.<p>The compiler disallows <code>u+0000</code> character anywhere in the source code except the endmost position, where it is ignored. UTF-8 Byte order mask (<code>0xFEFF</code>) is disallowed anywhere in the source except the very first position, where it is ignored.<h3>1.3. Lexemes</h3><p>The source code is represented by sequence of <strong>lexemes</strong>. Lexemes are a higher-order representations of the source code. Lexemes can be one of the following categories:<ul><li>Integer literal<li>String literal<li>Floating-point literal<li>Identifier<li>Special symbol (<code>"{"</code>, <code>"$"</code>, <code>">="</code> &c.)<li>Comment</ul><h4>1.3.1. Whitespace</h4><p>Any whitespace characters before and after every lexeme are <strong>ignored</strong>. The whitespace characters inside lexemes (e.g. in string literals) are not ignored.<p>The whitespace characters are all the ASCII control characters (<code>"\u+00".."\u+1F"</code>) plus the <code>"\u+20"</code> (whitespace) character.<pre><code class=language-ebnf>whitespace = "\u+00".."\u+1f" | "\u+20"
+</code></pre><p>There are cases, when whitespace makes a difference, between two different lexemes, for example inserting space inside a number will make two numbers (<code>1234 -> 12 34</code>). Therefore in implementing a compiler or source code analyzer tool one can not casually remove all the whitespace in between lexemes.<p>However this problem is easily solved by implementing the following behaviour: <em>given sequence of characters, to decide the next lexeme, the compiler picks the longest sequence at the start of the original sequence</em>.<p>If, for example compiler sees the character sequence <code>"1", "2", "3", "4"</code> the compiler will not think that there are two numbers, e.g. <code>"1"</code> and <code>"234"</code>. Instead the compiler will treat the longest sequence (<code>"1234"</code>) as being a single number.<p>In the case of sequence <code>"1", "2", " ", "3", "4"</code> the compiler can not treat that whitespace as part of the integer (according to the format of the integer literal as shown in sec. <strong>1.???</strong>). Therefore the longest sequence is <code>"12"</code>.<p>And as another example, given the sequence <code>"+", "="</code> the compiler will treat it as single operator <code>+=</code>, unless the space is inserted in between <code>+</code> and <code>=</code>.<h4>1.3.2. Comments</h4><p>The <strong>comments</strong> are special kind of lexeme that are discarded by the compiler. However the comments can be parsed by other utilities. As of <strong>version 1</strong>, <strong>X</strong> only has support for single-line comments.<p>The line comments start with <code>"#"</code> character that is not part of the string or char literal and ends with <code>"\u+0a"</code> (line feed) character.<p>Formally:<pre><code class=language-ebnf>comment-symbol = "\u+0001".."\u+0009" | "\u+000b".."\u+10ffff"
+line-comment   = "#" {comment-symbol} "\u+000a"
+</code></pre><p>Examples:<pre><code class=language-x># Hi, this is a comment
+# Комментарий на русском
+</code></pre><h4>1.3.3. Escape sequences</h4><p>In <em>character literals</em> (<strong>p. 1.3.6.</strong>) and in <em>string literals</em> (<strong>p. 1.3.7.</strong>) apart from the raw unicode character(s), user can input a special sequence of characters, that would map to a single character.<p>This is made so that some symbols are easier to type and sometimes to bypass limitations of the lexer, e.g. not being able to input <code>"</code> character in a string literal.<p>The list of escape sequences:<ul><li><code>\t</code> - horizontal tab symbol, maps to <code>\u+09</code><li><code>\n</code> - line feed symbol, maps to <code>\u+0a</code><li><code>\"</code> - the quotation mark, maps to <code>\u+22</code><li><code>\'</code> - the apostrophe symbol, maps to <code>\u+27</code><li><code>\\</code> - the backslash symbol, maps to <code>\u+5c</code><li><code>\u{x}</code> - the unicode codepoint (up to 6 characters)</ul><p>All other sequences starting with backslash are invalid. The compiler throws an error if it encounters such a sequence.<p>Note that the unicode escape sequence maps to the code specified after <code>u</code>. Some examples:<pre><code class=language-x>\u0       # maps to u+0000
+\u00      # still maps to u+0000
+\u000     # still maps to u+0000
+\u0000    # still maps to u+0000
+\u00000   # still maps to u+0000
+\u000000  # still maps to u+0000
+\u0000000 # counts as 2 characters: u+0000 followed by u+0030
+\u110000  # invalid, the code point is greater than u+10ffff
+</code></pre><h4>1.3.4. Integer literals</h4><p>The integer literals represent positive whole constant numeric values. The values can be specified in a variety of flavors: binary (bin) literals, octal (oct) literals, decimal (dec) literals and finally hexadecimal (hex) literals.<p>The literals in base other than 10 (and <em>optionally</em> in base 10) can be prefixed with special prefix.<ul><li><code>0b</code> and <code>0B</code> are the prefixes for <em>binary</em> literals.<li><code>0o</code> and <code>0O</code> (zero followed by capital o) are the prefixes for <em>octal</em> literals.<li><code>0d</code> and <code>0D</code> are the prefixes for <em>decimal</em> literals.<li><code>0x</code> and <code>0X</code> are the prefixes for <em>hexadecimal</em> literals.</ul><p>The integer literal can optionally contain underscores for visual clarity, e.g. one million can be written as <code>1_000_000</code> or like <code>100_0000</code>. The integer literal can not start with an underscore. The underscore can, however appear anywhere after the first digit or after the prefix. So <code>0b_0</code> is valid.<p>The underscores are ignored. If the only digit after the prefix is the underscore, the value of the literal is <code>0</code>.<p>Here's an example of valid and invalid integer literals<pre><code class=language-x>0          # valid, parsed as 0
+00         # valid, parsed as 0
+100_0000   # valid, parsed as 1000000
+0d_1_000_0 # valid, parsed as 10000
+0_         # valid, parsed as 0
+0d_        # valid, parsed as 0
+0d1F       # invalid, uses hexadecimal digits in decimal value
+_1000      # invalid, actually parsed as identifier lexeme
+0_d1000    # invalid, underscore is not allowed to break the prefix
+</code></pre><p>Whatever the base is, the final parsed value has to be no greater than <code>9223372036854775807</code> (<code>0xFFFF_FFFF_FFFF_FFFF</code>). If the specified value is greater, the compiler produces an error.<p>In hex literals, the case of characters is ignored. <code>0xf</code> and <code>0xF</code> mean the same thing.<p>The formal syntax for integer literals:<pre><code class=language-ebnf>bin-digit   = "0".."1" | "_"
+bin-prefix  = "0b" | "0b"
+bin-literal = bin-prefix {bin-digit}
+
+oct-digit   = "0".."7" | "_"
+oct-prefix  = "0o" | "0O"
+oct-literal = oct-prefix {oct-digit}
+
+dec-start   = "0".."9"
+dec-digit   = "0".."9" | "_"
+dec-prefix  = "0d" | "0D"
+dec-literal = (dec-prefix | dec-start) {dec-digit}
+
+hex-digit   = "0".."9" | "a".."f" | "A".."F" | "_"
+hex-prefix  = "0x" | "0X"
+hex-literal = hex-prefix {hex-digit}
+</code></pre><h4>1.3.5. Floating-point number literals</h4><p>The fractional and decimal numbers are stored according to "IEEE754 Floating point number standard". The language uses the 64-bit values to represent the values.<p>The floating point literals are <strong>required</strong> to contain the <code>"."</code> (dot) symbol. In general, the floating point literal can be represented as<pre><code>[prefix] &LTwhole digits> . &LTfractional digits> [(E|P) [+|-] &LTexponent digits>]
+</code></pre><p>It is <strong>required</strong> to have at least one whole digit, one fractional digit, and if the exponent part exists, one exponent digit. If such digit not found, the compiler throws an error.<p>The compiler only supports two flavors of the floating-point numbers: decimal floating point numbers, and hex floating-point numbers. The hex floating-point literals are prefixed with <code>0x</code> or <code>0X</code>, the decimal floating-point literals are <em>optionally</em> prefixed with <code>0d</code> or <code>0D</code>.<p>In case of decimal floating point numbers, if the fractional digits are followed by <code>"e"</code> or <code>"E"</code> symbol, the exponent digits specify decimal exponent, where the value of the literal is in the form:<pre><code class=language-x>value = (whole.fraction) * 10^exponent
+</code></pre><p>Also the so-called scientific notation.<p>In case of binary floating-point numbers, if the fractional digits are followed by <code>"p"</code> or <code>"P"</code>, the exponent digits specify binary exponent. And the value of the literal is in the form:<pre><code class=language-x>value = (whole.fraction) * 2^exponent
+</code></pre><p>If the value is in the subnormal range, or exceeds the 64-bit floating-point maximum value, then compiler throws an error.<p>The formal syntax is as follows:<pre><code class=language-ebnf>dec-prefix = "0d" | "0D"
+dec-start  = "0".."9"
+dec-digit  = "0".."9" | "_"
+dec-whole  = (dec-prefix | dec-start) {dec-digit}
+dec-fract  = {dec-digit}
+dec-exp    = {dec-digit}
+dec-float  = dec-whole "." dec-fract [("e" | "E") ["+" | "-"] dec-exp]
+
+hex-prefix = "0x" | "0X"
+hex-digit  = "0".."9" | "a".."f" | "A".."F" | "_"
+hex-whole  = hex-prefix {hex-digit}
+hex-fract  = {hex-digit}
+hex-exp    = {hex-digit}
+hex-float  = hex-whole "." hex-fract [("p" | "P") ["+"|"-"] hex-exp]
+</code></pre><p>Some examples:<pre><code class=language-x>2.0E+1   # valid, parsed as 20.0
+0x2.0E-1 # valid, parsed as (2.0 * 2^-1), or 1.0
+2E+1     # invalid, doesn't contain "." symbol
+2.0p+1   # invalid, binary exponent in decimal value
+0x2.0e-1 # invalid, decimal exponent in hex value
+</code></pre><h4>1.3.6. Character literals</h4><p>Character literals represent unicode codepoints. They can be given either by giving character directly, or by providing an escape sequence.<pre><code class=language-ebnf>apostrophe  = "\u+2d"
+backslash   = "\u+5c"
+char-symbol = "\u+01".."\u+2c" | "\u+2e".."\u+5b" | "\u+5d".."\u+10ffff"
+
+char-literal = apostrophe (char-symbol | escape-sequence) apostrophe
+</code></pre><p>Some examples of character literals:<pre><code class=language-x>'a'       # valid, maps to u+61
+'я'       # valid, contains a Unicode character
+'\''      # valid, maps to "'" (apostrophe) character
+'"'       # valid, maps to '"' (quote mark) character
+'\"'      # also valid, maps to '"' (quote mark) character
+'\'       # invalid, the character literal isn't closed
+''        # invalid, the character literal is empty
+'\u11000' # invalid, the literal specifies character out of the Unicode range
+</code></pre><h4>1.3.7. String literals</h4><p>String literals represent Unicode strings of text. The strings can contain any Unicode characters (including some control characters, like line feed)<pre><code class=language-ebnf>quote-mark  = "\u+22"
+backslash   = "\u+5c"
+str-symbol  = "\u+01".."\u+21" | "\u+23".."\u+5b" | "\u+5d".."\u+10ffff"
+
+str-literal = quote-mark {str-symbol | escape-sequence} quote-mark
+</code></pre><p>The examples of valid and invalid strings:<pre><code class=language-x>"abcdef" # valid
+"абвгед" # valid
+
+"
+hey
+"        # valid, contains "\nhey\n"
+
+"#"      # valid, contains the "#" character
+</code></pre><h4>1.3.8. Identifiers</h4><p>Identifiers represent <em>keywords</em>, and user-defined names. The identifiers may only contain ASCII letters, underscores and digits (but can not start with a digit).<p>The formal syntax:<pre><code class=language-ebnf>identifier-start = "_" | "a".."z" | "A".."Z"
+identifier-char  = "_" | "a".."z" | "A".."Z" | "0".."9"
+identifier       = identifier-start {identifier-char}
+</code></pre><p>Some valid and invalid identifiers:<pre><code class=language-x>cat    # valid
+_cat__ # valid
+d012   # valid
+0d10   # invalid, starts with digit
+a\ts   # invalid, can not contain backslash
+жаба   # invalid, can not contain non-ascii characters
+</code></pre><h4>1.3.9 Special symbols</h4><p>A special set of character sequences is used for special symbols such as operators. For example <code>+=</code> is not plus operator followed by the equals operator, it is a single operator. The compiler must match the longest operator from this sequence before advancing parsing to the next lexeme.<pre><code class=language-x>+   +=   ~   ~=   $   <    &LT-   (    )
+-   -=   |   |=   @   >    ->   [    ]
+*   *=   &   &=   !   <=   ,    {    }
+/   /=   <<  <<=  ?   >=   .    ;
+%   %=   >>  >>=  ==  !=   :    ..
+</code></pre><h3>1.4 Keywords</h3><p>Keywords are special types of identifiers whose usage is reserved for special occasions. User can not declare a variable or a type that has the name matching with any of the keywords.<p>The list of keywords and their meaning is listed before<table><thead><tr><th align=left>keyword<th align=left>meaning<tbody><tr><td align=left>null<td align=left>the null-pointer<tr><td align=left>false<td align=left>boolean false<tr><td align=left>true<td align=left>boolean true<tr><td align=left>nan<td align=left>floating point NaN value<tr><td align=left>inf<td align=left>floating point infinity value<tr><td align=left>bool<td align=left>boolean type name<tr><td align=left>char<td align=left>32-bit integer type name<tr><td align=left>int<td align=left>64-bit integer type name<tr><td align=left>byte<td align=left>8-bit integer type name<tr><td align=left>float<td align=left>floating-point type name<tr><td align=left>ptr<td align=left>untyped pointer type name<tr><td align=left>and<td align=left>boolean and operation<tr><td align=left>or<td align=left>boolean or operation<tr><td align=left>xor<td align=left>boolean xor operation<tr><td align=left>iff<td align=left>boolean equivalence operation<tr><td align=left>implies<td align=left>boolean implication operation<tr><td align=left>not<td align=left>boolean negation operation<tr><td align=left>sizeof<td align=left>sizeof operation<tr><td align=left>if<td align=left><strong>if</strong> statement's starting lexeme<tr><td align=left>else<td align=left>else branch of the <strong>if</strong> statement<tr><td align=left>while<td align=left><strong>while</strong> statement's starting lexeme<tr><td align=left>do<td align=left><strong>do</strong> part of the do-until statement<tr><td align=left>until<td align=left><strong>until</strong> part of the do-until statement<tr><td align=left>try<td align=left><strong>try</strong> in the try-catch block<tr><td align=left>catch<td align=left><strong>catch</strong> in the try-catch block<tr><td align=left>let<td align=left>variable declaration starting lexeme<tr><td align=left>type<td align=left>type declaration starting lexeme<tr><td align=left>func<td align=left>func declaration starting lexeme and func type name<tr><td align=left>method<td align=left>method declaration inside structs<tr><td align=left>operator<td align=left>operator declaration inside structs<tr><td align=left>struct<td align=left><strong>struct</strong> declaration starting lexeme and struct type name<tr><td align=left>enum<td align=left><strong>enum</strong> declaration starting lexeme and enum type name<tr><td align=left>union<td align=left><strong>union</strong> declaration starting lexeme and union type name<tr><td align=left>print<td align=left>print statement's starting lexeme<tr><td align=left>assert<td align=left>assert statement's starting lexeme<tr><td align=left>break<td align=left>break statement<tr><td align=left>continue<td align=left>continue statement<tr><td align=left>return<td align=left>return statement<tr><td align=left>throw<td align=left>throw statement<tr><td align=left>import<td align=left>import file<tr><td align=left>namespace<td align=left>namespace scope</table>
