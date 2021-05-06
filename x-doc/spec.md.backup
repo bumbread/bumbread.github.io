@@ -1,0 +1,1076 @@
+	
+# X language specification
+
+This is a specification for a language called **X** developed by [bumbread](https://github.com/bumbread/). This document covers all the details about the syntax, semantics and behaviour of the language.
+
+In particular, it will be useful for:
+- Compile writers, who wish to correctly implement the language compilation
+- People, who write syntax files for their editors' token highlighters
+- The people interested in the basic set of features of the language.
+- The **X** language programmers.
+
+This document does not cover quick guide to the basic syntax and the examples are kept to minimum. Nevertheless each syntax is showcased at least once, so a person interested in knowing how the language looks like can skim through the file.
+
+This document comments about all the edge cases objectively, without commenting on what the programmer should and shouldn't do. Every strict "shouldn't" was already encompassed in the language's rules.
+
+## 1. Lexical syntax
+
+### 1.0 Possible ideas (to be removed)
+
+- Imaginary literals
+- For loops
+- Unsigned, sized types
+- Multiline comments
+- Conditional compilation
+
+### 1.1. The notation
+
+In order to make the discussion about language's syntax easier and make the definition of syntax more rigorous, I am definiting a [formal grammar](https://en.wikipedia.org/wiki/Formal_grammar) notation. This notation is pretty similar to **EBNF**, but it has some minor changes.
+
+In that notation, every production rule is written as follows.
+
+```ebnf
+<production-name> = <expression>
+```
+
+At the left-hand side, the name of **production** (containing lowercase ASCII letters, `_` (underscore), `-` (dash) and digits) is written. Each rule specifies a replacement syntax. The name on the left-hand side can be replaced with `<expression>` on the right-hand side.
+
+An `<expression>` can be a string or other production. Strings are enclosed `"` (quotation mark) characters. For example, to define the `if` keyword one could write the following production rule:
+
+```ebnf
+if-keyword = "if"
+```
+
+**Alternatives** represent set of several possible productions. Exactly one alternative from the set has to be chosen. Alternatives are separated by the `|` (pipe) symbol. For example, I can define production rule for a vowel as follows:
+
+```ebnf
+vowel = "a" | "i" | "u" | "e" | "o"
+```
+
+Sometimes due to aesthetic reasons I will put newline before every `|` symbol.
+
+```ebnf
+vowel = "a" 
+      | "i"
+      | "u"
+      | "e"
+      | "o"
+```
+
+**Sequences** represent expressions following one by another in order. Expressions can be sequenced by writing them one after another, without separators (unlike **EBNF** the comma isn't used in between expressions). For example, rewriting the earlier `if` keyword example we could get:
+
+```ebnf
+if-keyword = "i" "f"
+```
+
+The sequence "operation" has higher "precedence" than alternative operation. The production for either string `"ab"` or `"cd"` can be defined as follows:
+
+```ebnf
+random-string = "a" "b"
+              | "c" "d"
+```
+
+Sometimes it is useful to make a sequence of alternatives instead. For example if I want to sequence string `"a"` with either `"0"` or `"1"` I could write:
+
+```ebnf
+random-string = "a" ("0" | "1")
+```
+
+This is what **grouping** operator is.
+
+Besides the normal grouping, this notation also has **repetition** operator that repeats the production finitely many times. To repeat a production enclose it in braces (`{}`) And **optional** operator that marks certain production as being optional. To mark production as optional enclose it with brackets (`[]`). For example I could define a grammar for decimal numbers as follows:
+
+```ebnf
+decimal-digit = "0" | "1" | "2" | "3" | "4"
+              | "5" | "6" | "7" | "8" | "9"
+
+decimal-number = decimal-digit {decimal-digit}
+```
+
+We first define a set of alternatives for `decimal-digits` to be all digits from `"0"` to `"1"`. Then we define `decimal-number` as at least one decimal digit followed by some amount (or zero) digits.
+
+
+For strings I can specify an **escape sequence**, that will specify unicode codepoint. It has a form of `\u+{x}`, where `x` is a hexadecimal character. For example, `"\u+30"`, `"\u+030"` and `"\u+0030"` all mean the same character - `"0"` (it has unicode codepoint `u+0030`).
+
+Also the **range** operator is used. The syntax looks like `"character1".."character2"`. It takes single-character strings, and it matches at least one character with codepoint in between codepoint of `"character1"` up until and including the codepoint of `"character2"`. 
+
+For example, the `decimal-digits` production from before could be written as:
+
+```ebnf
+decimal-digit = "\u+30".."\u+39"
+```
+
+Or, alternatively:
+
+```ebnf
+decimal-digit = "0".."9"
+```
+
+The formal definition for the grammar using this grammar is therefore:
+
+```ebnf
+decimal-digit = "0".."9"
+ascii-letter  = "a".."z" | "A".."Z"
+identifier    = { ascii-letter | decimal-digits | "-" | "_" }
+
+ascii-symbol  = "\u+00".."\u+7f"
+backslash     = "\u+5c"
+hex-digit     = "a".."f" | "A".."F" | "0".."9"
+hex-number    = hex-digit | {hex-digit}
+string        = "\u+22" (ascii-symbol | backslash "u+" hex-number) "\u+22"
+
+production-rule = identifier "=" alternative
+alternatives    = sequence   {"|" sequence  }
+sequence        = expression {    expression}
+expression      = string
+                | identifier
+                | "(" alternatives ")"
+                | "{" alternatives "}"
+                | "[" alternatives "]"
+```
+
+### 1.2. The source encoding
+
+The **X** source file must be represented by a sequence of characters encoded using **utf-8** encoding. Other encodings should not be accepted.
+
+The national symbols and other codepoints above ASCII range (`"\u+01".."0+7f"`) **can only appear inside comments, strings or char literals**.
+
+The text is not canonicalized. A codepoint representing decorated letter is different from two codepoints, one for the letter and one for the diacritics. So `だ` is different from `た` followed by the dakuten (`u+3099`) character.
+
+In general, the two characters are different if the codepoints representing them are different. That also implies case-sensitivity.
+
+The compiler disallows `u+0000` character anywhere in the source code except the endmost position, where it is ignored. UTF-8 Byte order mask (`0xFEFF`) is disallowed anywhere in the source except the very first position, where it is ignored.
+
+In the following sections a special identifier `EOF` will be used in the formal grammars. It does not necessarily represents a particular character. But rather it represents "virtual character" representing the end of line.
+
+### 1.3. Lexemes
+
+The source code is represented by sequence of **lexemes**. Lexemes are a higher-order representations of the source code. Lexemes can be one of the following categories:
+
+- Integer literal
+- String literal
+- Floating-point literal
+- Identifier
+- Special symbol (`"("`, `"$"`, `">="`, et cetera)
+- Comment
+
+#### 1.3.1. Whitespace
+
+Any whitespace characters before and after every lexeme are **ignored**. The whitespace characters inside lexemes (e.g. in string literals) are not ignored.
+
+The following characters are considered to be *whitespace characters*.
+
+- `u+0009` (horizontal tab)
+- `u+000a` (line feed)
+- `u+000b` (vertical tab)
+- `u+000c` (form feed)
+- `u+000d` (carriage return)
+- `u+0020` (space)
+
+Formally,
+
+```ebnf
+whitespace = "\u+09".."\u+0d" | "\u+20"
+```
+
+**X** is a **free-form** programming language. That means that beyong separating lexemes whitespace has no significant role. The meaning of the program stays the same if each whitespace character is replaced with other whitespace character (excluding the ones *inside* the lexemes, such as string literals (**p.1.3.7**) or comments (**p.1.3.2**).
+
+#### 1.3.2. Comments
+
+The **comments** are special kind of lexeme that are discarded by the compiler. However the comments can be parsed by other utilities. **X** only has support for single-line comments.
+
+The line comments start with `"#"` character that is not part of the string or char literal and ends with `"\u+0a"` (line feed) character, or by the end of file.
+
+Formally:
+
+```ebnf
+comment-symbol = "\u+0001".."\u+0009" | "\u+000b".."\u+10ffff"
+line-comment   = "#" {comment-symbol} ("\u+000a" | EOF)
+```
+
+Examples:
+
+```x
+# Hi, this is a comment
+# Комментарий на русском
+#nospaces
+```
+
+The line comments will also be used in the following examples to describe the examples.
+
+#### 1.3.3. Escape sequences
+
+In *character literals* (**p. 1.3.6.**) and in *string literals* (**p. 1.3.7.**), apart from the raw unicode characters, the user can input a special sequence of characters that would map to a single character. 
+
+This is made so that some symbols are easier to read or type and sometimes to bypass limitations of the lexer, e.g. not being able to otherwise put `"` character inside a string literal.
+
+The list of escape sequences:
+
+- `\t` - horizontal tab symbol, maps to `\u+09`
+- `\n` - line feed symbol, maps to `\u+0a`
+- `\"` - the quotation mark, maps to `\u+22`
+- `\'` - the apostrophe symbol, maps to `\u+27`
+- `\\` - the backslash symbol, maps to `\u+5c`
+- `\u{x}` - the unicode codepoint (up to 6 characters)
+
+All other sequences starting with backslash are invalid. The compiler throws an error if it encounters such a sequence.
+
+The `\'` and `\"` backslash sequences are available in either string literals or character literals. The compiler should not treat e.g. `\'` inside a string literal as an error.
+
+Note that the unicode escape sequence maps to the code specified after `u`. Some examples:
+
+```x
+\u0       # maps to u+0000
+\u00      # still maps to u+0000
+\u000     # still maps to u+0000
+\u0000    # still maps to u+0000
+\u00000   # still maps to u+0000
+\u000000  # still maps to u+0000
+\u0000000 # counts as 2 characters: u+0000 followed by u+0030
+\u110000  # invalid, the code point is greater than u+10ffff
+```
+
+#### 1.3.4. Integer literals
+
+The integer literals represent constant positive whole numeric values. The values can be specified in a variety of flavors: binary (bin) literals, octal (oct) literals, decimal (dec) literals and finally hexadecimal (hex) literals.
+
+The literals in base other than 10 (and *optionally* in base 10) can be prefixed with special prefix. 
+- `0b` and `0B` are the prefixes for *binary* literals. 
+- `0o` and `0O` (zero followed by capital o) are the prefixes for *octal* literals. 
+- `0d` and `0D` are the prefixes for *decimal* literals.
+- `0x` and `0X` are the prefixes for *hexadecimal* literals.
+
+The integer literal can optionally contain underscores for visual clarity, e.g. one million can be written as `1_000_000` or like `100_0000`. The integer literal can not start with an underscore. The underscore can, however appear anywhere after the first digit or after the prefix. So `0b_0` is valid. 
+
+The underscores are ignored. If the only digit after the prefix is the underscore, the value of the literal is `0`.
+
+Here's an example of valid and invalid integer literals
+
+```x
+0          # valid, parsed as 0
+00         # valid, parsed as 0
+100_0000   # valid, parsed as 1000000
+0d_1_000_0 # valid, parsed as 10000
+0_         # valid, parsed as 0
+0d_        # valid, parsed as 0
+0d1F       # invalid, uses hexadecimal digits in decimal value
+_1000      # invalid, actually parsed as identifier lexeme
+0_d1000    # invalid, underscore is not allowed to break the prefix
+```
+
+Whatever the base is, the final parsed value has to be no greater than `9223372036854775807` (`0xFFFF_FFFF_FFFF_FFFF`). If the specified value is greater, the compiler produces an error.
+
+In hex literals, the case of characters is ignored. `0xf` and `0xF` mean the same thing.
+
+The formal syntax for integer literals:
+
+```ebnf
+bin-digit   = "0".."1" | "_"
+bin-prefix  = "0b" | "0b"
+bin-literal = bin-prefix {bin-digit}
+
+oct-digit   = "0".."7" | "_"
+oct-prefix  = "0o" | "0O"
+oct-literal = oct-prefix {oct-digit}
+
+dec-start   = "0".."9"
+dec-digit   = "0".."9" | "_"
+dec-prefix  = "0d" | "0D"
+dec-literal = (dec-prefix | dec-start) {dec-digit}
+
+hex-digit   = "0".."9" | "a".."f" | "A".."F" | "_"
+hex-prefix  = "0x" | "0X"
+hex-literal = hex-prefix {hex-digit}
+
+int-literal = bin-literal | oct-literal | dec-literal | hex-literal
+```
+
+#### 1.3.5. Floating-point number literals
+
+The fractional and decimal numbers are stored according to "IEEE754 Floating point number standard". The language uses the 64-bit values to represent the values.
+
+The floating point literals are **required** to contain the `"."` (dot) symbol. In general, the floating point literal can be represented as
+
+```
+[prefix] <whole digits> . <fractional digits> [(E|P) [+|-] <exponent digits>]
+```
+
+It is **required** to have at least one whole digit, one fractional digit, and if the exponent part exists, one exponent digit. This requirement is not satisfied, as in `1.e+1`, the compiler throws an error.
+
+The compiler only supports two flavors of the floating-point numbers: decimal floating point numbers, and hex floating-point numbers. The hex floating-point literals are prefixed with `0x` or `0X`, the decimal floating-point literals are *optionally* prefixed with `0d` or `0D`.
+
+In case of decimal floating point numbers, if the fractional digits are followed by `"e"` or `"E"` symbol, the exponent digits specify decimal exponent, where the value of the literal is in the form:
+
+```x
+value = (whole.fraction) * 10^exponent
+```
+
+Also the so-called scientific notation.
+
+In case of binary floating-point numbers, if the fractional digits are followed by `"p"` or `"P"`, the exponent digits specify binary exponent. And the value of the literal is in the form:
+
+```x
+value = (whole.fraction) * 2^exponent
+```
+
+If the value is in the subnormal range, or exceeds the 64-bit floating-point maximum value, then compiler throws an error.
+
+The formal syntax is as follows:
+
+```ebnf
+dec-prefix = "0d" | "0D"
+dec-start  = "0".."9"
+dec-digit  = "0".."9" | "_"
+dec-whole  = (dec-prefix | dec-start) {dec-digit}
+dec-fract  = {dec-digit}
+dec-exp    = {dec-digit}
+dec-float  = dec-whole "." dec-fract [("e" | "E") ["+" | "-"] dec-exp]
+
+hex-prefix = "0x" | "0X"
+hex-digit  = "0".."9" | "a".."f" | "A".."F" | "_"
+hex-whole  = hex-prefix {hex-digit}
+hex-fract  = {hex-digit}
+hex-exp    = {hex-digit}
+hex-float  = hex-whole "." hex-fract [("p" | "P") ["+"|"-"] hex-exp]
+
+float-literal = dec-float | hex-float
+```
+
+Some examples:
+
+```x
+2.0E+1   # valid, parsed as 20.0
+0x2.0E-1 # valid, parsed as (2.0 * 2^-1), or 1.0
+2E+1     # invalid, doesn't contain "." symbol
+2.0p+1   # invalid, binary exponent in decimal value
+0x2.0e-1 # invalid, decimal exponent in hex value
+```
+
+#### 1.3.6. Character literals
+
+Character literals represent unicode codepoints. They can be given either by giving character directly, or by providing an escape sequence.
+
+```ebnf
+apostrophe  = "\u+2d"
+backslash   = "\u+5c"
+char-symbol = "\u+01".."\u+2c" | "\u+2e".."\u+5b" | "\u+5d".."\u+10ffff"
+
+char-literal = apostrophe (char-symbol | escape-sequence) apostrophe
+```
+
+Some examples of character literals:
+
+```x
+'a'       # valid, maps to u+61
+'я'       # valid, contains a Unicode character
+'\''      # valid, maps to "'" (apostrophe) character
+'"'       # valid, maps to '"' (quote mark) character
+'\"'      # also valid, maps to '"' (quote mark) character
+'\'       # invalid, the character literal isn't closed
+''        # invalid, the character literal is empty
+'\u11000' # invalid, the literal specifies character out of the Unicode range
+```
+
+#### 1.3.7. String literals
+
+String literals represent Unicode strings of text. The strings can contain any Unicode characters (including some control characters, like line feed)
+
+```ebnf
+quote-mark  = "\u+22"
+backslash   = "\u+5c"
+str-symbol  = "\u+01".."\u+21" | "\u+23".."\u+5b" | "\u+5d".."\u+10ffff"
+
+str-literal = quote-mark {str-symbol | escape-sequence} quote-mark
+```
+
+The examples of valid and invalid strings:
+
+```x
+"abcdef" # valid
+"абвгед" # valid
+
+"
+hey
+"        # valid, contains "\nhey\n"
+
+"#"      # valid, contains the "#" character
+```
+
+#### 1.3.8. Identifiers
+
+Identifiers represent user-defined names and *keywords*. The identifiers may only contain ASCII letters, underscores and digits. However identifiers are not allowed to start with a digit.
+
+The formal syntax:
+
+```ebnf
+identifier-start = "_" | "a".."z" | "A".."Z"
+identifier-char  = "_" | "a".."z" | "A".."Z" | "0".."9"
+identifier       = identifier-start {identifier-char}
+```
+
+Some valid and invalid identifiers:
+
+```x
+cat    # valid
+_cat__ # valid
+d012   # valid
+0d10   # invalid, starts with digit
+a\ts   # invalid, can not contain backslash
+жаба   # invalid, can not contain non-ascii characters
+```
+
+#### 1.3.9 Special symbols
+
+A special set of character sequences is used for special symbols such as operators. For example `+=` is not plus operator followed by the equals operator, it is a single operator. The compiler must match the longest operator from this sequence before advancing parsing to the next lexeme.
+
+```x
++   +=   ~   ~=   $   <    <-   (    )
+-   -=   |   |=   @   >    ->   [    ]
+*   *=   &   &=   !   <=   ,    {    }
+/   /=   <<  <<=  ?   >=   .    ;
+%   %=   >>  >>=  ==  !=   :    ..
+```
+
+### 1.4 Keywords
+
+Keywords are special types of identifiers whose usage is reserved for special occasions. User can not declare a variable or a type with the keyword name.
+
+The list of keywords and their meaning is listed before
+
+| keyword   | meaning          |
+|-----------|------------------|
+| `null`      | the null-pointer |
+| `false`     | boolean false |
+| `true`      | boolean true |
+| `nan`       | floating point NaN value |
+| `inf`       | floating point infinity value |
+| `bool`      | boolean type name |
+| `char`      | 32-bit integer type name |
+| `int`       | 64-bit integer type name |
+| `byte`      | 8-bit integer type name |
+| `float`     | floating-point type name |
+| `ptr`       | untyped pointer type name |
+| `and`       | boolean and operation |
+| `or`        | boolean or operation |
+| `xor`       | boolean xor operation |
+| `iff`       | boolean equivalence operation |
+| `implies`   | boolean implication operation |
+| `not`       | boolean negation operation |
+| `sizeof`    | sizeof operation |
+| `if`        | **if** statement's starting lexeme |
+| `else`      | else branch of the **if** statement |
+| `while`     | **while** statement's starting lexeme |
+| `do`        | **do** part of the do-until statement |
+| `until`     | **until** part of the do-until statement |
+| `try`       | **try** in the try-catch block |
+| `catch`     | **catch** in the try-catch block |
+| `let`       | variable declaration starting lexeme |
+| `type`      | type declaration starting lexeme |
+| `func`      | func declaration starting lexeme and func type name |
+| `meth`    | method declaration inside structs |
+| `this`      | encapsulated struct pointer |
+| `operator`  | operator declaration inside structs |
+| `struct`    | **struct** declaration starting lexeme and struct type name |
+| `enum`      | **enum** declaration starting lexeme and enum type name |
+| `union`     | **union** declaration starting lexeme and union type name |
+| `print`     | print statement's starting lexeme |
+| `assert`    | assert statement's starting lexeme |
+| `break`     | break statement |
+| `continue`  | continue statement |
+| `return`    | return statement |
+| `throw`     | throw statement |
+| `import`    | import file |
+| `namespace` | namespace scope |
+
+
+## 2. Code structure
+
+This section covers the structure of the **X** code, starting down from the expressions syntax and ending with the most top-level syntax. 
+
+This section only covers the syntax of the parts of the code but does not give any explanation to their semantics and use-cases. 
+
+### 2.1. Expressions
+
+#### 2.1.1. Literal expressions
+
+The literal expressions, or the value-expressions are the simplest expressions consisting of a simple value.
+
+```
+litexpr = int-literal 
+        | float-literal
+        | char-literal
+        | string-literal
+        | identifier
+```
+
+#### 2.1.2. Operators
+
+The unary operators of the language are:
+
+| Sign | Operator name | Description |
+|---|---|---|
+| `$` | Addressof | Takes the address of a variable or other *lvalue*|
+| `@` | Dereference | Gets the value of a variable or an address |
+| `-` | Negate | Negates the given value |
+| `~` | Bitwise negation| Negates integer value bit by bit |
+| `not` | Logical negation| Negates boolean value |
+
+The binary operations of the language:
+
+| a| b| c|
+|---|---|---|
+| `|` | d | e |
+
+| Sign | Operator name | Description |
+|---|---|---|
+| `+` | Sum | Adds two values |
+| `-` | Difference | Subtracts a value from another |
+| `*` | Product | Multiplies two values |
+| `/` | Divide | Divides two values |
+| `%` | Modulo | Remainder of integer or float division\* |
+| `&` | Bitwise and | Bitwise and between two integer values |
+| `|` | Bitwise or | Bitwise or between two integer values |
+| `~` | Bitwise not | Bitwise not between two integer values |
+| `<<`| Shift up (right) | *Logical* shift right |
+| `>>`| Shift down (left) | *Logical* shift left |
+| `:` | Cast | Converts value of one type to a value of another type, preserving semantics |
+| `::`| Transmute | Converts the value of one type to a value of another type, preserving memory layout |
+| `and` | Logical and | The **and** operation of two boolean values |
+| `or`  | Logical or  | The **or** operation of two boolean values |
+| `xor` | Logical xor | The **xor** operation of two boolean values |
+| `implies` | Logical implication | when **x** then **y** relationship |
+| `iff`| Logical equivalence | Same as `==` operation on logical values |
+| `[N]` | Subscript | Gets `N`'th element of a slice |
+
+\* The details of this operation are discussed in later sections.
+
+Note, that operators `+=`, `-=`, `*=`, `/=`, `%=`, `&=`, `|=`, `~=`, `>>=` and `<<=` are not part of the expression syntax. They make assignment *statements*, but can not be used in the expression context.
+
+The language only has one ternary operator:
+
+| Sign | Operator name | Description |
+|---|---|---|
+| `[N:M]` | Subslice| Adds two values |
+
+#### 2.1.?. Expressions syntax
+
+
+### 2.2. Types
+	
+### 2.3. Statements
+
+### 2.4. Code structure
+
+The source code structure of **X** represets a list of statements. Whenever the **X** program is compiled and then executed, conceptually the execution starts from the very first statement of the program. Unlike most other procedural and object-oriented programming languages, **X** does not require an execution entry point.
+
+
+
+Therefore
+
+```x
+let x: int = 3;
+while x < 10 {
+  x += 1;
+}
+
+print x;
+```
+
+Is a valid **X** program.
+
+## 3. Type system.
+
+Type system is a special system inside a compiler that is meant for *prevention of logical errors* in the code. The typing discipline in **X** is **static**, meaning that all checks are done during the compilation, and not during the execution of the program, and **strict**, meaning that there is no implicit type conversions (except couple special cases).
+
+Type is a special property of a value, that determines:
+- The operations available on the value
+- The size of the value
+
+This section provides a set of definitions for the types used in this language, their relationships and groups of types used to determine which operations are available.
+
+### 3.1. Types and type categories
+
+#### 3.1.1. Primitive types
+
+X language supports the following primitive types:
+
+| type   | size | set of values     |
+|--------|------|-------------------|
+| `bool` | 1    | `false`, `true`   |
+| `byte` | 1    | `-2^7 .. 2^7-1`   |
+| `char` | 4    | `-2^31 .. 2^31-1` |
+| `int`  | 8    | `-2^63 .. 2^63-1` |
+| `float`| 8    | Set of all IEEE754 64-bit representable floating-point numbers |
+| `ptr`  | 8    | `-2^63 .. 2^63-1` |
+
+The syntax for primitive types is:
+
+```ebnf
+prim-type = "bool"
+          | "byte"
+          | "char"
+          | "int"
+          | "float"
+          | "ptr"
+
+prim-or-alias = prim-type | identifier
+```
+
+The type aliases are just identifiers declared to mean some other type. They are **not** distinct types.
+
+
+#### 3.1.2. Typed pointer
+
+Typed pointers are the same size as the **pointer** types. However typed pointers preserve the information about the type of the value it points to.
+
+The syntax for the typed pointer is:
+
+```ebnf
+
+ptr-type = type "$" 
+```
+
+For example, the type "pointer to int" is written as follows:
+
+```x
+int$
+```
+
+The *typed pointer* will be referred to as **a pointer**, and the primitive pointers from the previous sections will be referred to as **untyped pointers**.
+
+#### 3.1.3. Slice types
+
+Slice types represent contiguous memory blocks. The values of slice-types can be thought of as pointer to the start of the block plus the size of the block.
+
+Making slice of functions is illegal, since function's size is undefined (see **p.3.1.4.**). One can, however, make a slice of pointers of functions.
+
+The syntax for the slice types is as follows:
+
+```ebnf
+slice-type = type "[]"
+```
+
+Some examples of slices:
+
+```x
+byte[]    # legal, a slice of bytes
+func()[]  # illegal
+func()$[] # legal, a slice of pointers to funcs
+```
+
+#### 3.1.4. Function types
+
+Functions represent code that can be run with certain parameters and that can return a certain value. Thus function types encompass the types of the function parameters and the type of the return value of the function.
+
+Values of function types have **undefined size**. The `sizeof` operator should return `-1` for every value of function type or the function type itslef. This also means you can not use function type to declare:
+- Struct fields
+- Variables
+- Function parameters
+
+However the **pointers to functions** have similar semantics as functions and can be used instead.
+
+The name of any of the parameters **can not be a keyword**. The parameters can not have a function type.
+
+The syntax is as follows:
+
+```ebnf
+sep          = "," | ";"
+
+iden-list    = identifier {sep identifier}
+func-param   = iden-list ":" type
+func-params  = func-param {sep func-param}
+
+func-mapping = "(" [func-params] ")" ["->" simple-type]
+func-type    = "func" func-mapping
+```
+
+Some examples of function types:
+
+```x
+# function taking no parameters and returning nothing
+func()
+
+# function taking no parameters and returning an int
+func()->int
+
+# function taking two first int parameter and second float parameter
+# and not returning a value
+func(a: int, b: float)
+
+# same as above, uses semicolon for separator
+func(a: int; b: float)
+
+# function taking one parameter of type
+#   (pointer to function taking int, returning an int)
+# and returning an int
+func(a: (func(a: int)->int)$ )->int
+
+# invalid, parameter can't be a function type
+func(a: func())->int
+
+# function taking 3 ints and 1 float, and 1 bool
+# note the different separators
+func(x,y;z:int, a:float; b: bool)
+```
+
+#### 3.1.5. Struct types
+
+**Struct types** represent groups of values stored together as a single unit of data. In pascal, also known as the **record types**.
+
+In **X** struct types, can also contain *functions* and *methods*.
+
+**Field declarations** can not declare fields of function types (**p.2.1.4**), since the values of function type have *undefined* size. They can, however contain functions themselves.
+
+If the struct type is declared via `type` declaration or `struct` declaration, none of the fields can directly contain field of the type being declared. Simply speaking, some recursive types are not allowed. However, the fields can take the type of e.g. "pointer to type" or "slice of type", since the size of pointer and slice is known.
+
+Declarations in struct fields are be **separated** by either `","` (comma) or `";"` (semicolon). The function and method declarations inside structs may not be followed by the separator. All *field* declarations, except if it is the last in the struct to be terminated by either `","` or `";"`.
+
+The order of the fields is the same as the order of the identifiers. `a,b,c: int, d: float` has the same order of fields as `a:int, b:int, c:int, d:float`. The compiler **can not reorder fields**.
+
+The syntax for the struct fields is:
+
+```ebnf
+sep          = ";" | ","
+
+iden-list    = identifier {sep identifier}
+struct-field = iden-list ":" type sep
+last-field   = iden-list ":" type [sep]
+struct-func  = "func" identifier ":" func-mapping "{" stmt-list "}" [sep]
+struct-meth  = "meth" identifier ":" func-mapping "{" stmt-list "}" [sep]
+
+struct-decl  = struct-field | struct-func | struct-meth
+last-decl    = last-field   | struct-func | struct-meth
+struct-decls = { struct-decl } last-decl
+
+struct-type  = "struct" "{" struct-decls "}"
+```
+
+Here are some examples of structs:
+
+```x
+# C-like separation of fields
+struct {
+  a: int;
+  b: float;
+}
+
+# Inline style
+struct {a:int, b:float}
+
+# Same as above, with trailing comma
+struct {a:int, b:float,}
+
+# Struct with packed decls, function and method
+struct {
+  x,y;z: int;
+  c:float,
+
+  func add: (a,b: int)->int {
+    return a+b;
+  }
+
+  meth neg: () {
+    x = -x;
+    y = -y;
+    z = -z;
+  };
+}
+
+# valid, structs can contain pointer to functions as fields
+struct {
+  f: (func()->int)$;
+}
+
+# invalid, structs can not contain function fields
+struct {
+  f: func()->int;
+}
+
+# invalid, structs have to have at least one decl
+struct {}
+```
+
+#### 3.1.6. Union types
+
+**TODO**
+
+#### 3.1.7. Enum types
+
+**TODO**
+
+#### 3.1.8. The syntax for types
+
+In the previous sections all the types of the **X** have been shown, however the formal grammar had left-recursion because that way it was the easiest to understand. 
+
+The complete syntax for the types in **X** is presented below. All of the left-recursions have been removed.
+
+```ebnf
+prim-type    = "bool"
+             | "byte"
+             | "char"
+             | "int"
+             | "float"
+             | "ptr"
+alias-type   = identifier
+
+sep          = ";" | ","
+iden-list    = identifier {sep identifier}
+
+func-param   = iden-list ":" type
+func-params  = func-param {sep func-param}
+func-mapping = "(" [func-params] ")" ["->" simple-type]
+func-type    = "func" func-mapping
+
+struct-field = iden-list ":" type sep
+last-field   = iden-list ":" type [sep]
+struct-func  = "func" identifier ":" func-mapping "{" stmt-list "}" [sep]
+struct-meth  = "meth" identifier ":" func-mapping "{" stmt-list "}" [sep]
+struct-decl  = struct-field | struct-func | struct-meth
+last-decl    = last-field   | struct-func | struct-meth
+struct-decls = { struct-decl } last-decl
+struct-type  = "struct" "{" struct-decls "}"
+
+base-type    = prim-type | alias-type | struct-type | "(" type ")" 
+simple-type  = base-type {"$" | "[]"}
+
+type         = simple-type | func-type {"$" | "[]"}
+```
+
+### 3.2. Type relationships and operations
+
+#### 3.2.1. Equivalence
+
+The equivalence defines relationship of types as being "the same" in the sense that is transparent to how they are defined. For example `int` and any type alias to `int` are equivalent, because they refer to the same type - `int`.
+
+Types **T** and **U** are called **equivalent**, if one of the following is true:
+1. **T** and **U** are *pointers* (typed) or *slices*, and their base types are **equivalent**
+2. **T** and **U** are *functions* and all of the following is true:
+   - **T** and **U** have **equivalent** return types
+   - **T** and **U** have the same number of parameters
+   - For every parameter of **T**, and the corresponding parameter of **U**, they have **equivalent** types
+3. **T** and **U** are *structs* and all of the following is true:
+   - **T** and **U** have the same number of fields
+   - For every field of **T**, and the corresponding field of **U**, they have **equivalent** types and same name.
+4. **T** and **U** are primitive types and **T** = **U**.
+
+If none of the above is true, then **T** and **U** are **not equivalent**.
+
+As a consequence of the definition the following applies:
+1. Any type **T** is equivalent to itself
+2. If **T** and **U** are equivalent, then **U** and **T** are equivalent.
+3. If **T** and **U** are equivalent, and **U** and **V** are equivalent, then **T** and **V** are equivalent.
+
+Note that structs are equivalent only if the fields are equivalent. Any two structs with the same fields but different functions inside them are also equivalent.
+
+#### 3.2.2. Assignability
+
+The type **T** is **assignable** to **U** if one of the following is true:
+1. **T** and **U** are **equivalent**
+2. **T** is *pointer* and **U** is untyped `ptr`
+3. **U** is *pointer* and **T** is untyped `ptr`
+
+Otherwise **T** is **not assignable** to **U**.
+
+As a consequence, 
+1. Any type **T** is assignable to itself
+2. If **T** is assignable to **U**, then **U** is assignable to **T**.
+3. If **T** is assignable to **U**, and **U** is assignable to **V**, then **T** is assignable to **V**.
+
+#### 3.2.3. Castability
+
+The castability determines whether values of one type can be cast, i.e. converted to another type. Castability does an explicit conversion, preserving the meaning.
+
+Type **T** is **castable** to type **U** if one of the following is true:
+1. **T** and **U** are same or different primitive types (`bool`, `byte`, `int`, `char`, `float`, `ptr`)
+2. **T** and **U** are *pointers*  of any underlying types (including untyped `ptr`).
+3. **T** and **U** are *slices* of any underlying types.
+4. **T** and **U** are *structs* with all of the following holds:
+   - **T** and **U** have the same number of fields
+   - corresponding fields's types of **T** and **U** are **assignable**
+5. **T** and **U** are *functions* and all of the following holds:
+   - **T** and **U** have the same number of parameters
+   - corresponding parameters's types of **T** and **U** are **assignable**
+
+Otherwise **T** is **not castable** to **U**.
+
+The details about the results of the *cast* operation are discussed later (**p.????**)
+
+#### 3.2.4. Transmutability
+
+The transmutability determines whether bit-sequence of one type can be re-interpreted as sequence of bits for another type.
+
+Type **T** is **transmutable** to **U** if one of the following is true:
+1. **T** and **U** are primitives that have the same size. (e.g. `int` and `float`)
+2. **T** is any pointer and **U** is any pointer.
+3. **T** and **U** are structs types of the same total size.
+
+Otherwise **T** is **not transmutable** to **U**.
+
+### 3.3. Type groups
+
+In order to make discussions about operations and expressions easier the **type groups** are introduced in this section. Each operation is specified as acting on types of certain groups. For example the operations of addition, subtraction and multiplication are available for all types of "arithmetic" group. One type can belong to several groups.
+
+#### 3.3.1. Integer arithmetic (IA)
+
+This is a group, such that for all values of this group the operations of the whole arithmetic, namely negation, addition, subtraction, multiplication, integer division, modulo division and all bitwise operations are defined.
+
+The details of those operations and the acceptable and derived types are not discussed here. However we are going to list the types of the group **IA**:
+
+- `byte`
+- `char`
+- `int`
+- `ptr`
+- All typed pointers
+
+#### 3.3.2. Floating-point arithmetic (FA)
+
+For the values of **FA** group types, the operations of negation, addition, subtraction, multiplication, division and modulo division are defined.
+
+The only type of the group **FA** is `float`. Unlike **IA** group, values of **FA** group types can not access bitwise operations.
+
+#### 3.3.3. Logical (Log)
+
+For the values of **Log** group, boolean operations are defined: logical negation, logical and, or, xor, implication and equivalence. The only type of this group is `bool`.
+
+#### 3.3.4. Ordered (Ord)
+
+For the values of **Ord** group types the following operations of relation are defined: less-than, greater-than, not-less (greater-or-equal), not-greater (less-or-equal).
+
+The following types have the **Ord** category:
+
+- `bool`
+- `byte`
+- `char`
+- `int`
+- `float`
+- `ptr`
+- All typed pointers
+
+#### 3.3.5. Subscriptable (Sub)
+
+For the values of **Sub** group, the operation of subscripting is available. The types of this group are all the typed pointers and all the slices.
+
+#### 3.3.6. Callable (Call)
+
+For the values of **Call** group, the operation of function calling is available. The types of this group are functions, method functions and pointers to functions.
+
+#### 3.3.7. Structure (Str)
+
+For the members of **Str** group, the operation of member access is accessible. The types of this group are all the `struct` types, pointers to structs and any slice types.
+
+The details of which particular fields are accessible is described, whenever the member access operation is described.
+
+## 4. Declarations
+
+Declarations introduce name to the vocabulary of a program.
+
+In **X** there are several types of declarations.
+
+- Variable declarations
+- Type declarations
+- Function declarations
+- Struct declarations
+- Method declarations
+
+The name introduced by any declaration can not be any of the keywords (**p.1.4**). The *shadowing* of declarations is **not allowed**.
+
+This section describes declarations' syntax, scoping system, visibility in detail.
+
+### 4.1. Scope system
+
+Every element of the language that can contain declarations has it's own **scope** (e.g. function scope). I will refer to the statements or expressions inside those containers as also being *inside their scope*.
+
+Every scope, except the **global** scope has a **parent scope**. If scope **s** belongs to statement **S**, the parent of the scope **s** is the scope, where **S** is located.
+
+```x
+# global scope
+func a: (x:int) { # function scope
+  # block scope
+}
+```
+
+In the example above you can see three scopes: the global scope, the function scope and the block scope. The block scope is part of the block statement. The block statement is part of the function, so the function scope is the parent of the block scope. Also the function scope is part of the function statement, which is the part of the global block. Therefore the global scope is the parent of the function scope.
+
+Every scope has a list of **own** declarations and a list of **inherited** declarations associated with it. The list of own declarations consists of all the declarations within the element with which the scope is associated (except the elements within the elements of the associated element).
+
+The list of inherited declaraions specifies the declarations that the scope "sees" in it's parent scope. Of course not all of the declarations are visible. In the following example inside the block scope only the variable `x` is visible but not `y`:
+
+```x
+let x: int = 4;
+if x<10 {
+  let z: int = x+y;   #error, y is not visible in this scope
+}
+let y: int = 4;
+```
+
+That's why it's important to specify that scope only inherits those declarations from parent located *before* it. What the word before means depends on the context, but in general it literally means "occuring earlier in the source". One exception is the variable declaration expression's scope:
+
+```x
+let x: int = x~x;    # error, x is not visible in the initializer of x
+```
+
+However the function declarations are inherited without that requirement. Therefore the following code is valid:
+
+```x
+{
+  add(2,3);  # valid, even though it is located "after" this block scope
+}
+
+And the struct declarations allow their name to be 
+
+func add: (x,y: int)->int {
+  return x+y;
+}
+```
+
+Based on the kind of the element, where the declarations are located, the scope have distinct kinds:
+
+- Block scope.
+  Every statement block has it's own scope.
+- While scope (applied to `while` statements)
+- If scope (applied to `if` statements)
+- Function scope (applied to methods and functions)
+- Struct scope (applied to `struct` declarations)
+
+#### 4.1.1. Basic relationships
+
+The scope **P** is an **ancestor** of **S** if one of the following applies:
+
+- **P** is a parent of **S**
+- **P** is a parent of an **ancestor** of **S**
+
+If scope **S** has parent **P**, then **P** has **child** **S**.
+
+The scope **S** is **descendant** of **P** if one of the following applies:
+
+- **S** is a child of **P**
+- **S** is a child of **descendant** of **P**
+
+You can think of an *ancestor* as being a enclosing scope enclosing **S** and *descendant* scope as being "inside" of **P**.
+
+In order define accessibility and visibility we will define an addition notion of declaration being located "before" another declaration or the scope. The phrase **before X** means either before **X** in the current scope, or before any of the ancestor scopes of **X**.
+
+#### 4.1.2. Visibility
+
+Scope **S** is said to **inherit** declaration **D** from the parent scope **P** if the following conditions are met:
+
+- **D** is in **P**
+- **D** is located **before** **S**
+- When **S** is a struct or function scope, **D** is a type declaration
+
+In scope **S** declaration **D** is called **visible** if one of the following is true:
+
+- **D** is in **S**
+- **S** inherits **D** from its parent **P**, and **D** is **visible** in **P**
+
+A declaration **D** is called **accessible** from statement or scope **s** if the following conditions are met:
+
+- **D** is visible from the scope of **S**
+- **D** is located before **s**
+- **S** inherits **D** from **P**
+
+#### 4.1.1. Shadowing
+
+**Shadowing** is considered to occur whenever to or more distinct declarations are **accessible** from some scope.
+
+If any declaration **D** shadows any declaration **d**, the compiler throws an error.
