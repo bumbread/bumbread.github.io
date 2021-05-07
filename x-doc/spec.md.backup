@@ -1,17 +1,17 @@
 	
 # X language specification
 
-This is a specification for a language called **X** developed by [bumbread](https://github.com/bumbread/). This document covers all the details about the syntax, semantics and behaviour of the language.
+This is a specification for a language called **x** developed by [bumbread](https://github.com/bumbread/). This document covers all the details about the syntax, semantics and the behaviour of the language. This document does not cover the contents of the standard library.
 
 In particular, it will be useful for:
-- Compile writers, who wish to correctly implement the language compilation
-- People, who write syntax files for their editors' token highlighters
-- The people interested in the basic set of features of the language.
-- The **X** language programmers.
+- Programmers who wish to implement an **x** compiler
+- People who write syntax files for their editors' token highlighters
+- The people interested in the features of the language
+- The **x** language programmers
 
-This document does not cover quick guide to the basic syntax and the examples are kept to minimum. Nevertheless each syntax is showcased at least once, so a person interested in knowing how the language looks like can skim through the file.
+The specification includes examples and the formal definition of the syntax.
 
-This document comments about all the edge cases objectively, without commenting on what the programmer should and shouldn't do. Every strict "shouldn't" was already encompassed in the language's rules.
+This document treats all the edge cases objectively, without commenting on what is good and what is bad. The freedom of expression within the language is one of its design principles.
 
 ## 1. Lexical syntax
 
@@ -25,29 +25,29 @@ This document comments about all the edge cases objectively, without commenting 
 
 ### 1.1. The notation
 
-In order to make the discussion about language's syntax easier and make the definition of syntax more rigorous, I am definiting a [formal grammar](https://en.wikipedia.org/wiki/Formal_grammar) notation. This notation is pretty similar to **EBNF**, but it has some minor changes.
+The formal description of the language's syntax is done using a [formal grammar](https://en.wikipedia.org/wiki/Formal_grammar) notation. The notation used in this document is similar to **EBNF**, but it has some convenient changes.
 
-In that notation, every production rule is written as follows.
+Every production rule is written as follows.
 
 ```ebnf
-<production-name> = <expression>
+<production-name> = <production>
 ```
 
-At the left-hand side, the name of **production** (containing lowercase ASCII letters, `_` (underscore), `-` (dash) and digits) is written. Each rule specifies a replacement syntax. The name on the left-hand side can be replaced with `<expression>` on the right-hand side.
+The left-hand side contains the name of **production** is written. The names can contain ASCII letters, underscores (`_`), dashes (`-`) and digits. 
 
-An `<expression>` can be a string or other production. Strings are enclosed `"` (quotation mark) characters. For example, to define the `if` keyword one could write the following production rule:
+A `<production>` can be a string, for example. Strings are enclosed `"` (quotation mark) characters. For example, to define the `if` keyword one could write the following production rule:
 
 ```ebnf
 if-keyword = "if"
 ```
 
-**Alternatives** represent set of several possible productions. Exactly one alternative from the set has to be chosen. Alternatives are separated by the `|` (pipe) symbol. For example, I can define production rule for a vowel as follows:
+**Alternatives** represent set of several alternative possible productions. Exactly one alternative from that set has to be chosen. Alternatives are separated by the pipe (`|`) symbol. For example, one can define production rule for a vowel as follows:
 
 ```ebnf
 vowel = "a" | "i" | "u" | "e" | "o"
 ```
 
-Sometimes due to aesthetic reasons I will put newline before every `|` symbol.
+A newline can be put before every `|` symbol.
 
 ```ebnf
 vowel = "a" 
@@ -57,28 +57,40 @@ vowel = "a"
       | "o"
 ```
 
-**Sequences** represent expressions following one by another in order. Expressions can be sequenced by writing them one after another, without separators (unlike **EBNF** the comma isn't used in between expressions). For example, rewriting the earlier `if` keyword example we could get:
+**Sequences** represent productions following one after another in order. The sequence looks like two productions following one after another (unlike **EBNF** the comma isn't used in between sequenced productions). For example, rewriting the earlier `if` keyword example we could get:
 
 ```ebnf
 if-keyword = "i" "f"
 ```
 
-The sequence "operation" has higher "precedence" than alternative operation. The production for either string `"ab"` or `"cd"` can be defined as follows:
+The **sequence** operation has higher precedence than the **alternative** operation. The production for either string `"ab"` or `"cd"` can be defined as follows:
 
 ```ebnf
 random-string = "a" "b"
               | "c" "d"
 ```
 
-Sometimes it is useful to make a sequence of alternatives instead. For example if I want to sequence string `"a"` with either `"0"` or `"1"` I could write:
+Which will be the same as:
+
+```ebnf
+random-string = ("a" "b") | ("c" "d")
+```
+
+And the same as:
+
+```ebnf
+random-string = "ab" | "cd"
+```
+
+To make a sequence of alternatives instead put a pair of parens `()`. For example if I want to sequence string `"a"` with either `"0"` or `"1"` I could write:
 
 ```ebnf
 random-string = "a" ("0" | "1")
 ```
 
-This is what **grouping** operator is.
+The rule `("0" | "1")` is called a **group**.
 
-Besides the normal grouping, this notation also has **repetition** operator that repeats the production finitely many times. To repeat a production enclose it in braces (`{}`) And **optional** operator that marks certain production as being optional. To mark production as optional enclose it with brackets (`[]`). For example I could define a grammar for decimal numbers as follows:
+Besides the normal groups, this notation also has **repetition** groups that represent the production repeated zero or finitely many times. To repeat a production enclose it in braces (`{}`). For example one could define a grammar for decimal numbers as follows:
 
 ```ebnf
 decimal-digit = "0" | "1" | "2" | "3" | "4"
@@ -87,12 +99,13 @@ decimal-digit = "0" | "1" | "2" | "3" | "4"
 decimal-number = decimal-digit {decimal-digit}
 ```
 
-We first define a set of alternatives for `decimal-digits` to be all digits from `"0"` to `"1"`. Then we define `decimal-number` as at least one decimal digit followed by some amount (or zero) digits.
+The production for `decimal-number` represents a decimal digit followed by zero or more decimal digits.
 
+And **optional** group that marks certain production as being optional. To mark production as optional enclose it with brackets (`[]`). 
 
-For strings I can specify an **escape sequence**, that will specify unicode codepoint. It has a form of `\u+{x}`, where `x` is a hexadecimal character. For example, `"\u+30"`, `"\u+030"` and `"\u+0030"` all mean the same character - `"0"` (it has unicode codepoint `u+0030`).
+For strings it's possible to specify an **escape sequence** that will specify unicode codepoint. The syntax has a form of `\u+{x}`, where `x` is a hexadecimal character. For example, `"\u+30"`, `"\u+030"` and `"\u+0030"` all mean the same character - `"0"` (it has unicode codepoint `u+0030`).
 
-Also the **range** operator is used. The syntax looks like `"character1".."character2"`. It takes single-character strings, and it matches at least one character with codepoint in between codepoint of `"character1"` up until and including the codepoint of `"character2"`. 
+Also the **range** operator can be used to specify an alternative of consecutive codepoints. The syntax looks like `"character1".."character2"`. It takes two single-character strings. The production matches at least one character with codepoints in between `"character1"` up until and including the codepoint of `"character2"`.
 
 For example, the `decimal-digits` production from before could be written as:
 
@@ -106,46 +119,61 @@ Or, alternatively:
 decimal-digit = "0".."9"
 ```
 
+It is also possible to exclude a digit from a set of alternatives or from a range by using `except` word. For example to define a rule for all the decimal digits except `5` it's possible to write the following:
+
+```ebnf
+digits-but-5: "0".."9" except "5"
+```
+
 The formal definition for the grammar using this grammar is therefore:
 
 ```ebnf
-decimal-digit = "0".."9"
-ascii-letter  = "a".."z" | "A".."Z"
-identifier    = { ascii-letter | decimal-digits | "-" | "_" }
+decimal-digit   = "0".."9"
+ascii-letter    = "a".."z" | "A".."Z"
+identifier-char = ascii-letter | decimal-digits | "-" | "_"
+identifier      = identifier-char { identifier-char }
 
-ascii-symbol  = "\u+00".."\u+7f"
-backslash     = "\u+5c"
-hex-digit     = "a".."f" | "A".."F" | "0".."9"
-hex-number    = hex-digit | {hex-digit}
-string        = "\u+22" (ascii-symbol | backslash "u+" hex-number) "\u+22"
+ascii-symbol    = "\u+00".."\u+7f"
+backslash       = "\u+5c"
+double-quote    = "\u+22"
+hex-digit       = "a".."f" | "A".."F" | "0".."9"
+hex-number      = hex-digit | {hex-digit}
+string          = double-quote (ascii-symbol | backslash "u+" hex-number) double-quote
 
-production-rule = identifier "=" alternative
+production-rule = identifier "=" production
+production      = alternatives "except" alternatives
 alternatives    = sequence   {"|" sequence  }
 sequence        = expression {    expression}
 expression      = string
                 | identifier
-                | "(" alternatives ")"
-                | "{" alternatives "}"
-                | "[" alternatives "]"
+                | "(" production ")"
+                | "{" production "}"
+                | "[" production "]"
 ```
 
 ### 1.2. The source encoding
 
-The **X** source file must be represented by a sequence of characters encoded using **utf-8** encoding. Other encodings should not be accepted.
+The **x** source file must be represented by a sequence of characters encoded using **utf-8** encoding. Other encodings should not be accepted. The utf-8 character codepoints range from `0` to `0x10ffff`.
 
 The national symbols and other codepoints above ASCII range (`"\u+01".."0+7f"`) **can only appear inside comments, strings or char literals**.
 
-The text is not canonicalized. A codepoint representing decorated letter is different from two codepoints, one for the letter and one for the diacritics. So `だ` is different from `た` followed by the dakuten (`u+3099`) character.
+The text is not canonicalized. So any codepoint representing decorated letter is different from two codepoints, one for the letter and one for the diacritics. So `だ` is treated differently from `た` followed by the dakuten (`u+3099`) codepoint. In particular, the string literals may generate different amounts of bytes for each representation of a character.
 
-In general, the two characters are different if the codepoints representing them are different. That also implies case-sensitivity.
+The two characters are different if the codepoints representing them are different. This also implies case-sensitivity.
 
-The compiler disallows `u+0000` character anywhere in the source code except the endmost position, where it is ignored. UTF-8 Byte order mask (`0xFEFF`) is disallowed anywhere in the source except the very first position, where it is ignored.
+The compiler disallows the NUL (`u+0000`) character anywhere in the source code except the endmost position, where it is ignored. UTF-8 Byte order mask (`0xFEFF`) is disallowed anywhere in the source except the very first position, where it is ignored. 
 
-In the following sections a special identifier `EOF` will be used in the formal grammars. It does not necessarily represents a particular character. But rather it represents "virtual character" representing the end of line.
+In the formal syntax, `EOF` production is used to signify the end of input. The `any-char` production will be used to denote symbol with any codepoint.
+
+```ebnf
+any-char = "\u+00".."\u+10ffff"
+```
+
+
 
 ### 1.3. Lexemes
 
-The source code is represented by sequence of **lexemes**. Lexemes are a higher-order representations of the source code. Lexemes can be one of the following categories:
+The source code is represented by sequence of **lexemes**, a.k.a. **tokens**. Lexemes can be one of the following categories:
 
 - Integer literal
 - String literal
@@ -154,9 +182,11 @@ The source code is represented by sequence of **lexemes**. Lexemes are a higher-
 - Special symbol (`"("`, `"$"`, `">="`, et cetera)
 - Comment
 
+**x** is a **free-form** programming language. That means that the only role of whitespace and comments is to separate lexemes that otherwise might be tokenized in another manner. The meaning of the program stays the same if each whitespace character is replaced with other whitespace character or if any pair of whitespace characters is replaced by other whitespace character (excluding the whitespace*inside* the lexemes).
+
 #### 1.3.1. Whitespace
 
-Any whitespace characters before and after every lexeme are **ignored**. The whitespace characters inside lexemes (e.g. in string literals) are not ignored.
+Conceptually, whitespace characters are the characters that are "invisible" to the eye.
 
 The following characters are considered to be *whitespace characters*.
 
@@ -173,30 +203,81 @@ Formally,
 whitespace = "\u+09".."\u+0d" | "\u+20"
 ```
 
-**X** is a **free-form** programming language. That means that beyong separating lexemes whitespace has no significant role. The meaning of the program stays the same if each whitespace character is replaced with other whitespace character (excluding the ones *inside* the lexemes, such as string literals (**p.1.3.7**) or comments (**p.1.3.2**).
+A particular subset of whitespace is the set of **line terminators**. Line terminators are the characters that are treated by the compiler as being the end of the line. The characters that don't fall into that category are called **line characters**. The following characters are considered to be the line terminators:
+
+- `u+000a` (line feed)
+- `u+000b` (vertical tab)
+- `u+000c` (form feed)
+- `u+000d` (carriage return)
+
+Formal syntax:
+
+```
+line-terminator = "\u+0a".."\u+0d"
+line-char       = any-char except line-terminator
+```
 
 #### 1.3.2. Comments
 
-The **comments** are special kind of lexeme that are discarded by the compiler. However the comments can be parsed by other utilities. **X** only has support for single-line comments.
+The **comments** are special kind of lexeme that are discarded by the compiler. **x** supports three kinds of comments: 
 
-The line comments start with `"#"` character that is not part of the string or char literal and ends with `"\u+0a"` (line feed) character, or by the end of file.
+- Line comments
+- Block comments
+- Nesting block comments
+
+The line comments start with `"#"` character that is not part of the string or char literal and ends with any of the line terminator characters, or by the end of file.
 
 Formally:
 
 ```ebnf
-comment-symbol = "\u+0001".."\u+0009" | "\u+000b".."\u+10ffff"
-line-comment   = "#" {comment-symbol} ("\u+000a" | EOF)
+lc-first-char  = any-char  except "#" | "*" | line-terminator
+line-comment   = "#" lc-first-char {line-char} (line-terminator | EOF)
 ```
 
-Examples:
+The **block comments** are comments that have both start marker and the end marker. The block comments start with `##` and end with `##`. Block comments can not contain the string `##`. As a consequence, the block comments do not nest.
+
+```ebnf
+bc-marker     = "##"
+bc-char       = (line-char except "#") | ("#" (line-char except "#"))
+block-comment = bc-marker {bc-char} bc-marker
+```
+
+In order to go around the limitation of no-nesting use **nesting block comments**. Instead of using single marker for the start and the end these comments use symmetric opening marker (`#*`) and ending marker (`*#`).
+
+```ebnf
+nbc-start     = "#*"
+nbc-end       = "*#"
+nbc-char      = (line-char except "*") | ("*" (line-char except "#")) | nb-comment
+nb-comment    = nbc-start {nbc-char} nbc-end
+```
+
+Also within line comments `##` and `#*` has no special meaning. Within block comments `#` and `#*` have no special meaning.
+
+The self-described examples of comments, either valid or invalid:
 
 ```x
-# Hi, this is a comment
+# Line comment can contain ## and #*
 # Комментарий на русском
 #nospaces
+
+outside
+
+#*Anything starting with ## is a block comment*#
+
+outside
+
+## Inside comment ## outside comment ## inside comment ##
+
+outside
+
+### Block comment's text starts with '#' symbol. ##
+
+outside
+
+#*#*Error: the nesting block comment is not closed*# still inside
 ```
 
-The line comments will also be used in the following examples to describe the examples.
+The line comments will also be used in the following examples of the **x** code to describe them.
 
 #### 1.3.3. Escape sequences
 
@@ -491,19 +572,7 @@ This section only covers the syntax of the parts of the code but does not give a
 
 ### 2.1. Expressions
 
-#### 2.1.1. Literal expressions
-
-The literal expressions, or the value-expressions are the simplest expressions consisting of a simple value.
-
-```
-litexpr = int-literal 
-        | float-literal
-        | char-literal
-        | string-literal
-        | identifier
-```
-
-#### 2.1.2. Operators
+#### 2.1.1. Operators
 
 The unary operators of the language are:
 
@@ -514,12 +583,11 @@ The unary operators of the language are:
 | `-` | Negate | Negates the given value |
 | `~` | Bitwise negation| Negates integer value bit by bit |
 | `not` | Logical negation| Negates boolean value |
+| `[N]` | Subscript | Gets `N`'th element of a slice |
+| `[N:M]` | Subslice| Returns a slice by "cutting" through another slices starting at index `N` (inclusive) and ending with index `M` (exclusive) |
+| `(...)` | Function call | Call function with certain parameters|
 
 The binary operations of the language:
-
-| a| b| c|
-|---|---|---|
-| `|` | d | e |
 
 | Sign | Operator name | Description |
 |---|---|---|
@@ -529,31 +597,99 @@ The binary operations of the language:
 | `/` | Divide | Divides two values |
 | `%` | Modulo | Remainder of integer or float division\* |
 | `&` | Bitwise and | Bitwise and between two integer values |
-| `|` | Bitwise or | Bitwise or between two integer values |
+| `\|`| Bitwise or | Bitwise or between two integer values |
 | `~` | Bitwise not | Bitwise not between two integer values |
 | `<<`| Shift up (right) | *Logical* shift right |
 | `>>`| Shift down (left) | *Logical* shift left |
+| `>` | Greater | Checks whether value is greater than another value |
+| `<` | Less | Checks whether value is less than another value |
+| `>=` | No-less | Checks whether value is greater or equal than another value |
+| `<=` | No-Greater | Checks whether value is less or equal than another value |
+| `==` | Equal | Checks whether value is equal to another value |
+| `!=` | Not equal | Checks whether value is not equal to another value |
 | `:` | Cast | Converts value of one type to a value of another type, preserving semantics |
 | `::`| Transmute | Converts the value of one type to a value of another type, preserving memory layout |
 | `and` | Logical and | The **and** operation of two boolean values |
 | `or`  | Logical or  | The **or** operation of two boolean values |
 | `xor` | Logical xor | The **xor** operation of two boolean values |
-| `implies` | Logical implication | when **x** then **y** relationship |
+| `implies` | Logical implication | "when **x** then **y**" relationship |
 | `iff`| Logical equivalence | Same as `==` operation on logical values |
-| `[N]` | Subscript | Gets `N`'th element of a slice |
 
 \* The details of this operation are discussed in later sections.
 
-Note, that operators `+=`, `-=`, `*=`, `/=`, `%=`, `&=`, `|=`, `~=`, `>>=` and `<<=` are not part of the expression syntax. They make assignment *statements*, but can not be used in the expression context.
+Note, that operators `+=`, `-=`, `*=`, `/=`, `%=`, `&=`, `|=`, `~=`, `>>=`, `<<=` and `=` are not part of the expression syntax. They make assignment *statements*, but can not be used in the expression context.
 
-The language only has one ternary operator:
+#### 2.1.2. Operator precedence
 
-| Sign | Operator name | Description |
-|---|---|---|
-| `[N:M]` | Subslice| Adds two values |
+Operator precedence defined as follows. Every unary operator has higher precedence than any binary operator and any ternary operator. And for every unary operator, postfix unary operators have higher precedence than prefix unary operators.
 
-#### 2.1.?. Expressions syntax
+According to these rules the following equalities hold for any suitable operands:
 
+```x
+@x$   ==   @(x$)   # dereferenced value of address of x
+@f(x) ==   @(f(x)) # dereference return value of function f called with parameter x
+~x$   ==   ~(x$)   # bitwise negation of address of x
+-a[2] ==   -(a[2]) # negating second element of a slice
+```
+
+The unary operators are evaluated inside-out, starting from where the expression occurs. So `-~@x` is the same as `-(~(@x))`. Therefore the precision for all unary operators is clearly defined using just two rules.
+
+The precedence table for the binary operators follows. Higher precedence level means higher precedence, i.e. the "binding" of those operators is stronger.
+
+|Precedence level| Operators|
+|---|---|
+|7  |`\|`, `~` |
+|6  |`&`, `<<`, `>>`,`*`, `/`, `%` |
+|5  |`+`, `-`|
+|4  |`==`, `!=`, `>`, `<`, `>=`, `<=` |
+|3  |`and` |
+|2  |`or`,`xor`
+|1  |`iff`, `implies` |
+|0  |`:`, `::` |
+
+
+#### 2.1.3. Expressions syntax
+
+In the previous sections operators in the language were informally introduced. Now the concrete syntax for expressions in **x** is presented.
+
+```ebnf
+litexpr      = int-literal 
+             | float-literal
+             | char-literal
+             | string-literal
+             | identifier
+
+call-params  = "(" [expression { "," expression }] ")"
+subscript    = "[" (expression | ([expression] ":" [expression]) ) "]"
+
+L7-op        = "|" | "~"
+L6-op        = "&" | "<<" | ">>" | "*" | "/" | "%"
+L5-op        = "+" | "-"
+L4-op        = "==" | "!=" | ">" | "<" | ">=" | "<="
+L3-op        = "and"
+L2-op        = "or" | "xor"
+L1-op        = "iff" | "implies"
+L0-op        = ":" | "::"
+UPref-op     = "-" | "~" | "@"
+Upost-op     = "$" | call-params | subscript
+        
+expr-L7      = litexpr
+             | "(" expression ")"
+
+expr-postfix = expr-L7 { UPost-op }
+expr-prefix  = { UPref-op } expr-postfix
+
+expr-L7      = expr-prefix { L7-op expr-prefix }
+expr-L6      = expr-L7 { L6-op expr-L7 }
+expr-L5      = expr-L6 { L5-op expr-L6 }
+expr-L4      = expr-L5 { L4-op expr-L5 }
+expr-L3      = expr-L4 { L3-op expr-L4 }
+expr-L2      = expr-L3 { L2-op expr-L3 }
+expr-L1      = expr-L2 { L1-op expr-L2 }
+expr-L0      = expr-L1 [ L0-op type ]
+
+expression   = expr-L0
+```
 
 ### 2.2. Types
 	
