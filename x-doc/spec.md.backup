@@ -4,6 +4,7 @@
 This is a specification for a language called **x** developed by [bumbread](https://github.com/bumbread/). This document covers all the details about the syntax, semantics and the behaviour of the language. This document does not cover the contents of the standard library.
 
 In particular, it will be useful for:
+
 - Programmers who wish to implement an **x** compiler
 - People who write syntax files for their editors' token highlighters
 - The people interested in the features of the language
@@ -182,7 +183,7 @@ The source code is represented by sequence of **lexemes**, a.k.a. **tokens**. Le
 - Special symbol (`"("`, `"$"`, `">="`, et cetera)
 - Comment
 
-**x** is a **free-form** programming language. That means that the only role of whitespace and comments is to separate lexemes that otherwise might be tokenized in another manner. The meaning of the program stays the same if each whitespace character is replaced with other whitespace character or if any pair of whitespace characters is replaced by other whitespace character (excluding the whitespace*inside* the lexemes).
+**x** is a **free-form** programming language. That means that the only role of whitespace and comments is to separate lexemes that otherwise might be tokenized in another manner. The meaning of the program stays the same if each whitespace character is replaced with other whitespace character or if any pair of whitespace characters is replaced by other whitespace character (excluding the whitespace *inside* the lexemes).
 
 #### 1.3.1. Whitespace
 
@@ -251,7 +252,7 @@ nbc-char      = (line-char except "*") | ("*" (line-char except "#")) | nb-comme
 nb-comment    = nbc-start {nbc-char} nbc-end
 ```
 
-Also within line comments `##` and `#*` has no special meaning. Within block comments `#` and `#*` have no special meaning.
+Also within line comments `##` and `#*` has no special meaning. Within block comments `#` and `#*` have no special meaning. And within the nested block comments, `#` and `##` have no special meaning.
 
 The self-described examples of comments, either valid or invalid:
 
@@ -281,9 +282,7 @@ The line comments will also be used in the following examples of the **x** code 
 
 #### 1.3.3. Escape sequences
 
-In *character literals* (**p. 1.3.6.**) and in *string literals* (**p. 1.3.7.**), apart from the raw unicode characters, the user can input a special sequence of characters that would map to a single character. 
-
-This is made so that some symbols are easier to read or type and sometimes to bypass limitations of the lexer, e.g. not being able to otherwise put `"` character inside a string literal.
+In [*character literals*](#136-character-literals) and in [*string literals*](#137-string-literals), apart from the raw unicode characters, the user can input a special sequence of characters that would map to a single character.
 
 The list of escape sequences:
 
@@ -296,7 +295,7 @@ The list of escape sequences:
 
 All other sequences starting with backslash are invalid. The compiler throws an error if it encounters such a sequence.
 
-The `\'` and `\"` backslash sequences are available in either string literals or character literals. The compiler should not treat e.g. `\'` inside a string literal as an error.
+The `\'` and `\"` backslash sequences are available in either string literals or character literals. The compiler does not treat e.g. `\'` inside a string literal as an error.
 
 Note that the unicode escape sequence maps to the code specified after `u`. Some examples:
 
@@ -315,31 +314,20 @@ Note that the unicode escape sequence maps to the code specified after `u`. Some
 
 The integer literals represent constant positive whole numeric values. The values can be specified in a variety of flavors: binary (bin) literals, octal (oct) literals, decimal (dec) literals and finally hexadecimal (hex) literals.
 
-The literals in base other than 10 (and *optionally* in base 10) can be prefixed with special prefix. 
-- `0b` and `0B` are the prefixes for *binary* literals. 
-- `0o` and `0O` (zero followed by capital o) are the prefixes for *octal* literals. 
+The literals in base other than 10 (and *optionally* in base 10) can be prefixed with a special prefix.
+
+- `0b` and `0B` are the prefixes for *binary* literals.
+- `0o` and `0O` (zero followed by capital o) are the prefixes for *octal* literals.
 - `0d` and `0D` are the prefixes for *decimal* literals.
 - `0x` and `0X` are the prefixes for *hexadecimal* literals.
 
-The integer literal can optionally contain underscores for visual clarity, e.g. one million can be written as `1_000_000` or like `100_0000`. The integer literal can not start with an underscore. The underscore can, however appear anywhere after the first digit or after the prefix. So `0b_0` is valid. 
+The integer literal can optionally contain underscores for visual clarity, e.g. one million can be written as `1_000_000` or like `100_0000`. The integer literal can not start with an underscore. The underscore can, however appear anywhere after the first digit or after the prefix. So `0b_0` is valid. Since underscores are treated as digits, `0b_` is a valid integer literal as well.
 
-The underscores are ignored. If the only digit after the prefix is the underscore, the value of the literal is `0`.
+The underscores are ignored. If the only digit after the prefix is the underscore, e.g. in the case `0b_`, then the value of the literal is `0`.
 
-Here's an example of valid and invalid integer literals
+Whatever the base is, the final parsed value has to be no greater than `922_3372_0368_5477_5808` (`0x80000000_00000000` in hex). If the specified value is greater, the compiler produces an error.
 
-```x
-0          # valid, parsed as 0
-00         # valid, parsed as 0
-100_0000   # valid, parsed as 1000000
-0d_1_000_0 # valid, parsed as 10000
-0_         # valid, parsed as 0
-0d_        # valid, parsed as 0
-0d1F       # invalid, uses hexadecimal digits in decimal value
-_1000      # invalid, actually parsed as identifier lexeme
-0_d1000    # invalid, underscore is not allowed to break the prefix
-```
-
-Whatever the base is, the final parsed value has to be no greater than `9223372036854775807` (`0xFFFF_FFFF_FFFF_FFFF`). If the specified value is greater, the compiler produces an error.
+Due to how the complement of two works, there's a special restriction on the literal with the value `922_3372_0368_5477_5808`. This literal can only appear as an operand to a unary `-` operation, where it is statically converted to the value of `-922_3372_0368_5477_5808`. Otherwise no signed 64-bit integer can have a value of `922_3372_0368_5477_5808` or bigger.
 
 In hex literals, the case of characters is ignored. `0xf` and `0xF` mean the same thing.
 
@@ -366,9 +354,24 @@ hex-literal = hex-prefix {hex-digit}
 int-literal = bin-literal | oct-literal | dec-literal | hex-literal
 ```
 
+
+Here's an example of valid and invalid integer literals
+
+```x
+0          # valid, parsed as 0
+00         # valid, parsed as 0
+100_0000   # valid, parsed as 1000000
+0d_1_000_0 # valid, parsed as 10000
+0_         # valid, parsed as 0
+0d_        # valid, parsed as 0
+0d1F       # invalid, uses hexadecimal digits in decimal value
+_1000      # invalid, actually parsed as identifier lexeme
+0_d1000    # invalid, underscore is not allowed to break the prefix
+```
+
 #### 1.3.5. Floating-point number literals
 
-The fractional and decimal numbers are stored according to "IEEE754 Floating point number standard". The language uses the 64-bit values to represent the values.
+The fractional and decimal numbers are stored according to "IEEE754 standard for floating point arithmetic". The language uses the 64-bit values to represent the values.
 
 The floating point literals are **required** to contain the `"."` (dot) symbol. In general, the floating point literal can be represented as
 
@@ -376,7 +379,7 @@ The floating point literals are **required** to contain the `"."` (dot) symbol. 
 [prefix] <whole digits> . <fractional digits> [(E|P) [+|-] <exponent digits>]
 ```
 
-It is **required** to have at least one whole digit, one fractional digit, and if the exponent part exists, one exponent digit. This requirement is not satisfied, as in `1.e+1`, the compiler throws an error.
+It is **required** to have at least one whole digit, one fractional digit, and if the exponent part exists, one exponent digit. This requirement is not satisfied, as in `1.e+1`, the compiler throws an error. The required digit can be `_` if it's not the first digit of an unprefixed literal. Thus, `0_._e+_` is a valid floating point literal.
 
 The compiler only supports two flavors of the floating-point numbers: decimal floating point numbers, and hex floating-point numbers. The hex floating-point literals are prefixed with `0x` or `0X`, the decimal floating-point literals are *optionally* prefixed with `0d` or `0D`.
 
@@ -386,7 +389,7 @@ In case of decimal floating point numbers, if the fractional digits are followed
 value = (whole.fraction) * 10^exponent
 ```
 
-Also the so-called scientific notation.
+Note the `10` in the base of the exponent.
 
 In case of binary floating-point numbers, if the fractional digits are followed by `"p"` or `"P"`, the exponent digits specify binary exponent. And the value of the literal is in the form:
 
@@ -394,7 +397,11 @@ In case of binary floating-point numbers, if the fractional digits are followed 
 value = (whole.fraction) * 2^exponent
 ```
 
-If the value is in the subnormal range, or exceeds the 64-bit floating-point maximum value, then compiler throws an error.
+Note the `2` in the base of the exponent.
+
+If the value of a floating-point number is in the subnormal range, or exceeds the 64-bit floating-point maximum value, then compiler throws an error. If a floating point number is not exactly representable it is rounded to the nearest exactly-representable even number.
+
+There are two special floating point literals: `nan` and `inf`. The first one represents errorneus value of NaN, according to IEEE754 standard, and the second one represents the value of positive infinity. Those two literals are case-sensitive.
 
 The formal syntax is as follows:
 
@@ -414,7 +421,7 @@ hex-fract  = {hex-digit}
 hex-exp    = {hex-digit}
 hex-float  = hex-whole "." hex-fract [("p" | "P") ["+"|"-"] hex-exp]
 
-float-literal = dec-float | hex-float
+float-literal = dec-float | hex-float | "nan" | "inf"
 ```
 
 Some examples:
@@ -422,6 +429,8 @@ Some examples:
 ```x
 2.0E+1   # valid, parsed as 20.0
 0x2.0E-1 # valid, parsed as (2.0 * 2^-1), or 1.0
+2._      # valid, parsed as 2.0
+0_._e+_  # valid, parsed as 0.0
 2E+1     # invalid, doesn't contain "." symbol
 2.0p+1   # invalid, binary exponent in decimal value
 0x2.0e-1 # invalid, decimal exponent in hex value
@@ -429,12 +438,12 @@ Some examples:
 
 #### 1.3.6. Character literals
 
-Character literals represent unicode codepoints. They can be given either by giving character directly, or by providing an escape sequence.
+Character literals represent integer values of the unicode codepoints. They can be given either by giving character directly, or by providing an escape sequence.
 
 ```ebnf
 apostrophe  = "\u+2d"
 backslash   = "\u+5c"
-char-symbol = "\u+01".."\u+2c" | "\u+2e".."\u+5b" | "\u+5d".."\u+10ffff"
+char-symbol = any-char except apostrophe | backslash
 
 char-literal = apostrophe (char-symbol | escape-sequence) apostrophe
 ```
@@ -442,6 +451,9 @@ char-literal = apostrophe (char-symbol | escape-sequence) apostrophe
 Some examples of character literals:
 
 ```x
+'
+'         # valid, contains newline character
+
 'a'       # valid, maps to u+61
 'я'       # valid, contains a Unicode character
 '\''      # valid, maps to "'" (apostrophe) character
@@ -449,7 +461,7 @@ Some examples of character literals:
 '\"'      # also valid, maps to '"' (quote mark) character
 '\'       # invalid, the character literal isn't closed
 ''        # invalid, the character literal is empty
-'\u11000' # invalid, the literal specifies character out of the Unicode range
+'\u11000' # invalid, the literal specifies character out of the range of Unicode codepoints
 ```
 
 #### 1.3.7. String literals
@@ -459,7 +471,7 @@ String literals represent Unicode strings of text. The strings can contain any U
 ```ebnf
 quote-mark  = "\u+22"
 backslash   = "\u+5c"
-str-symbol  = "\u+01".."\u+21" | "\u+23".."\u+5b" | "\u+5d".."\u+10ffff"
+str-symbol  = any-char except quote-mark | backslash
 
 str-literal = quote-mark {str-symbol | escape-sequence} quote-mark
 ```
@@ -477,7 +489,23 @@ hey
 "#"      # valid, contains the "#" character
 ```
 
-#### 1.3.8. Identifiers
+#### 1.3.8. Boolean literals
+
+There are two boolean literals: `true` and `false`.
+
+```ebnf
+bool-literal = "true" | "false"
+```
+
+#### 1.3.9. Pointer literal
+
+There is only one pointer literal: `null`.
+
+```ebnf
+ptr-literal = "null"
+```
+
+#### 1.3.10. Identifiers
 
 Identifiers represent user-defined names and *keywords*. The identifiers may only contain ASCII letters, underscores and digits. However identifiers are not allowed to start with a digit.
 
@@ -500,9 +528,9 @@ a\ts   # invalid, can not contain backslash
 жаба   # invalid, can not contain non-ascii characters
 ```
 
-#### 1.3.9 Special symbols
+#### 1.3.11 Special symbols
 
-A special set of character sequences is used for special symbols such as operators. For example `+=` is not plus operator followed by the equals operator, it is a single operator. The compiler must match the longest operator from this sequence before advancing parsing to the next lexeme.
+A special set of character sequences is used for special symbols such as operators. For example `+=` is not plus lexeme followed by the equals lexeme, rather, it is a single lexeme. The compiler must match the longest operator from this sequence before advancing parsing to the next lexeme.
 
 ```x
 +   +=   ~   ~=   $   <    <-   (    )
@@ -520,11 +548,6 @@ The list of keywords and their meaning is listed before
 
 | keyword   | meaning          |
 |-----------|------------------|
-| `null`      | the null-pointer |
-| `false`     | boolean false |
-| `true`      | boolean true |
-| `nan`       | floating point NaN value |
-| `inf`       | floating point infinity value |
 | `bool`      | boolean type name |
 | `char`      | 32-bit integer type name |
 | `int`       | 64-bit integer type name |
@@ -538,17 +561,19 @@ The list of keywords and their meaning is listed before
 | `implies`   | boolean implication operation |
 | `not`       | boolean negation operation |
 | `sizeof`    | sizeof operation |
+| `typeof`    | typeof operation |
+| `offsetof`  | offsetof operation |
 | `if`        | **if** statement's starting lexeme |
 | `else`      | else branch of the **if** statement |
 | `while`     | **while** statement's starting lexeme |
-| `do`        | **do** part of the do-until statement |
+| `do`        | **do** starting lexeme of the do-until statement |
 | `until`     | **until** part of the do-until statement |
-| `try`       | **try** in the try-catch block |
+| `try`       | **try** starting lexeme of the try-catch block |
 | `catch`     | **catch** in the try-catch block |
 | `let`       | variable declaration starting lexeme |
 | `type`      | type declaration starting lexeme |
 | `func`      | func declaration starting lexeme and func type name |
-| `meth`    | method declaration inside structs |
+| `meth`      | method declaration inside structs |
 | `this`      | encapsulated struct pointer |
 | `operator`  | operator declaration inside structs |
 | `struct`    | **struct** declaration starting lexeme and struct type name |
@@ -563,6 +588,9 @@ The list of keywords and their meaning is listed before
 | `import`    | import file |
 | `namespace` | namespace scope |
 
+Note that `nan`, `inf`, `false`, `true` and `null` are not keywords. They are more like pre-declared identifiers.
+
+Another name that one can not use when naming an identifier is `_` (single underscore). This identifier has special meaning. Note that `_` is not a keyword either.
 
 ## 2. Code structure
 
@@ -719,6 +747,7 @@ Is a valid **X** program.
 Type system is a special system inside a compiler that is meant for *prevention of logical errors* in the code. The typing discipline in **X** is **static**, meaning that all checks are done during the compilation, and not during the execution of the program, and **strict**, meaning that there is no implicit type conversions (except couple special cases).
 
 Type is a special property of a value, that determines:
+
 - The operations available on the value
 - The size of the value
 
@@ -979,6 +1008,7 @@ type         = simple-type | func-type {"$" | "[]"}
 The equivalence defines relationship of types as being "the same" in the sense that is transparent to how they are defined. For example `int` and any type alias to `int` are equivalent, because they refer to the same type - `int`.
 
 Types **T** and **U** are called **equivalent**, if one of the following is true:
+
 1. **T** and **U** are *pointers* (typed) or *slices*, and their base types are **equivalent**
 2. **T** and **U** are *functions* and all of the following is true:
    - **T** and **U** have **equivalent** return types
@@ -992,6 +1022,7 @@ Types **T** and **U** are called **equivalent**, if one of the following is true
 If none of the above is true, then **T** and **U** are **not equivalent**.
 
 As a consequence of the definition the following applies:
+
 1. Any type **T** is equivalent to itself
 2. If **T** and **U** are equivalent, then **U** and **T** are equivalent.
 3. If **T** and **U** are equivalent, and **U** and **V** are equivalent, then **T** and **V** are equivalent.
@@ -1001,6 +1032,7 @@ Note that structs are equivalent only if the fields are equivalent. Any two stru
 #### 3.2.2. Assignability
 
 The type **T** is **assignable** to **U** if one of the following is true:
+
 1. **T** and **U** are **equivalent**
 2. **T** is *pointer* and **U** is untyped `ptr`
 3. **U** is *pointer* and **T** is untyped `ptr`
@@ -1008,6 +1040,7 @@ The type **T** is **assignable** to **U** if one of the following is true:
 Otherwise **T** is **not assignable** to **U**.
 
 As a consequence, 
+
 1. Any type **T** is assignable to itself
 2. If **T** is assignable to **U**, then **U** is assignable to **T**.
 3. If **T** is assignable to **U**, and **U** is assignable to **V**, then **T** is assignable to **V**.
@@ -1017,6 +1050,7 @@ As a consequence,
 The castability determines whether values of one type can be cast, i.e. converted to another type. Castability does an explicit conversion, preserving the meaning.
 
 Type **T** is **castable** to type **U** if one of the following is true:
+
 1. **T** and **U** are same or different primitive types (`bool`, `byte`, `int`, `char`, `float`, `ptr`)
 2. **T** and **U** are *pointers*  of any underlying types (including untyped `ptr`).
 3. **T** and **U** are *slices* of any underlying types.
@@ -1036,6 +1070,7 @@ The details about the results of the *cast* operation are discussed later (**p.?
 The transmutability determines whether bit-sequence of one type can be re-interpreted as sequence of bits for another type.
 
 Type **T** is **transmutable** to **U** if one of the following is true:
+
 1. **T** and **U** are primitives that have the same size. (e.g. `int` and `float`)
 2. **T** is any pointer and **U** is any pointer.
 3. **T** and **U** are structs types of the same total size.
@@ -1161,8 +1196,7 @@ func add: (x,y: int)->int {
 
 Based on the kind of the element, where the declarations are located, the scope have distinct kinds:
 
-- Block scope.
-  Every statement block has it's own scope.
+- Block scope (Every statement block has it's own scope)
 - While scope (applied to `while` statements)
 - If scope (applied to `if` statements)
 - Function scope (applied to methods and functions)
