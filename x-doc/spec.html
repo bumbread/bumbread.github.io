@@ -127,9 +127,9 @@ hex-float  = hex-whole "." hex-fract [("p" | "P") ["+"|"-"] hex-exp]
 
 float-literal = dec-float | hex-float | "nan" | "inf"
 </code></pre><p>Some examples:<pre><code class="x language-x">2.0E+1   # valid, parsed as 20.0
-0x2.0E-1 # valid, parsed as (2.0 * 2^-1), or 1.0
+0d2.0E-1 # valid, parsed as (2.0 * 2^-1), or 1.0
 2._      # valid, parsed as 2.0
-0_._e+_  # valid, parsed as 0.0
+0x_._e+_ # valid, parsed as 0.0
 2E+1     # invalid, doesn't contain "." symbol
 2.0p+1   # invalid, binary exponent in decimal value
 0x2.0e-1 # invalid, decimal exponent in hex value
