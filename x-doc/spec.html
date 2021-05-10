@@ -462,7 +462,7 @@ while-stmt = "while" expr stmt-body
 
 while a&LT10 do a+=1;
 
-while state && func(state$);
+while state && f(state$);
 </code></pre><h4 id=338-repeat-statement>3.3.8. Repeat statement</h4><p>Repeat statements let program repeat execution of a certain statement block <em>one or more times</em>.<p>The syntax for repeat statements is the following:<pre><code class="ebnf language-ebnf">repeat-stmt = "repeat" stmt-list "until" expr ";"
 </code></pre><p>Examples:<pre><code class="x language-x">repeat
   a += 3;
