@@ -132,17 +132,12 @@ expr-tuple   = expr-type   { ","      expr-type   }
 expr-ass     = expr-tuple  { op-ass   expr-tuple  }
 
 expression   = expr-ass
-</code></pre><h3 id=22-type-syntax>2.2. Type syntax</h3><h4 id=211-primitive-types>2.1.1. Primitive types</h4><ol><li><em>basic types</em> define the types natively supported by the compiler<li><em>primitive types</em> define the single-identifier types<li><em>simple types</em> define primitive types and slices, arrays or pointers to other simple types.</ol><p>Syntax:<pre><code class="ebnf language-ebnf">size-spec  = "(" int-literal ")"
-
-bool-type  = "bool"   [ size-spec ]
-int-type   = "int"    [ size-spec ]
-float-type = "float"  [ size-spec ]
-ptr-type   = "ptr"    [ size-spec ]
-
-basic-type = bool-type
-           | int-type
-           | float-type
-           | ptr-type
+</code></pre><h3 id=22-type-syntax>2.2. Type syntax</h3><h4 id=211-primitive-types>2.1.1. Primitive types</h4><ol><li><em>basic types</em> define the types natively supported by the compiler<li><em>primitive types</em> define the single-identifier types<li><em>simple types</em> define primitive types and slices, arrays or pointers to other simple types.</ol><p>Syntax:<pre><code class="ebnf language-ebnf">basic-type = "bool"  | "b8" | "b16" | "b32" | "b64"
+           | "int"   | "i8" | "i16" | "i32" | "i64"
+           | "uint"  | "u8" | "u16" | "u32" | "u64"
+           | "rune"  | "r8" | "r16" | "r32" | "r64"
+           | "float"                | "f32" | "f64"
+           | "ptr"                          | "p64"
 
 prim-type  = basic-type
            | identifier
@@ -332,4 +327,4 @@ while x < 10 {
 }
 
 print x;
-</code></pre><p>Is a valid <strong>0</strong> program.
+</code></pre><p>Is a valid <strong>0</strong> program.`
