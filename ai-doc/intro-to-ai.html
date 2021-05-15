@@ -1,0 +1,75 @@
+<!DOCTYPE html><html><head><meta charset=utf-8><meta name=referrer content=no-referrer><meta name=viewport content="width=device-width, initial-scale=0.7"><link rel=stylesheet href=/styles.css><link rel=favicon href=/favicon.ico><link rel=apple-touch-icon href=/favicon.ico><script src=/coloring.js defer></script><body><h1 id=introduction-to-the-ai-programming-language>Introduction to the ai programming language</h1><p>This page represents an informal guide to the ai programming language, showcasing it's syntax and various features in a concise manner. The features are only described, but not explained. If you would like to learn more about the particular features and the general idea behind them, the relevant terms are highlighted in <em>italic</em> script.<p>The ai (read as "eye") programming language is developed by <a href=https://github.com/bumbread>bumbread</a>. The word ai is a transcription of the japanese word 「愛」 that means "love".<h2 id=1-basic-syntax>1. Basic syntax</h2><p>The source files are encoded using utf-8. The unicode characters above the ASCII range are only accepted inside <em>comments</em>, <em>string-literals</em> and <em>character literals</em>.<p>The language is very close to the <em>scripting languages</em> in the fact that the statements are not required to be part of <em>procedures</em> or <em>functions</em>. The other notable difference is the <code>print</code> statement. It accepts a list of comma-separated expressions and prints them to <em>stdout</em> without the moving the cursor to the new line.<p>Therefore a file with "Hello, world!" program can have the following contents:<pre><code class="ai language-ai">print "Hello, world!\n";
+</code></pre><p>Line comments start with <code>#</code>. Block comments start and end with <code>##</code> and nesting block comments start with <code>#*</code> and end with <code>*#</code>.<pre><code class="ai language-ai"># line comment
+
+print ## the string follows! ## "hello";
+
+#* nesting
+  #* block
+    #* comments *#
+  *#
+  комментарий на русском
+*#
+</code></pre><h2 id=2-variable-declarations>2. Variable declarations</h2><p>In order to declare a variable use a <em>variable declaration</em>. The basic syntax is <code>let name: type = expression</code>. The expression can be optionally omitted.<pre><code class="ai language-ai">let i: int = 3;
+# is the same as
+let i = 3;
+
+let y: int; # initialization omission
+</code></pre><p>One can place multiple declarations in one line. In that case the types can be optionally specified to each group of identifiers and if you want to assign use a tuple assignment.<pre><code class="ai language-ai"># x,y,z have type float
+let x,y,z:float = 1.0, 2.0, 3.0;
+
+# x,y are type-inferred, z has type float
+let x,y:_, z:float = 1.0, 2.0, 3.0;
+
+# types can be inferred for all values in a tuple
+let x,y,z = 1.0, 2.0, 3.0;
+
+# one can selectively omit which variables get assigned
+#   y doesn't get assigned.
+let x,y,z: float = 1.0, _, 3.0;
+
+# ... 1.0 doesn't get assigned to anything
+let _,y,z: float = 1.0, 2.0, 3.0;
+</code></pre><h2 id=3-if-statements>3. If statements</h2><p>Unlike most <em>C-like</em> languagees, the if statements' conditions do not need to be parenthesized. The if statements can take one of the following forms:<pre><code class="ai language-ai">if expression { statements; }
+
+if expression do statement;
+
+if expression;
+</code></pre><p>But there is another difference. ai supports if <em>scoped</em> declarations. Use <code>with</code> keyword to declare and assign one or more variables before evaluating an expression.<pre><code class="ai language-ai">if with filename = read_input(); is_filename(filename) {
+  print "file: ", filename, " was opened\n";
+}
+else {
+  print "file: ", fileanme, " can not be opened\n";
+}
+</code></pre><h2 id=4-while-statements>4. While statements</h2><p>While loops are <em>pre-condition</em> loops. Just like if statements, the condition doesn't have to be parenthesized and while loops support <code>with</code> declaration, making them more like traditional <code>for</code> loops.<pre><code class="ai language-ai"># find maximum from the array
+
+let max = arr[0];
+while with i=1; i < arr.len {
+  if arr[i] > max do max = arr[i];
+  i += 1;
+}
+print max;
+</code></pre><h2 id=5-repeat-statements>5. Repeat statements</h2><p>Repeat statements are <em>post-condition</em> loops. The block is optionally put in brackets. The condition doesn't have to be parenthesized. Unlike C, the condition of the loop can see the scope of the body of the loop.<pre><code class="ai language-ai">let x: int;
+repeat
+  x,ok = get_user_input();
+until ok;
+print x;
+</code></pre><p>Another form of the repeat statements uses <code>while</code> as it's post condition.<pre><code class="ai language-ai">let x: int;
+repeat {
+  let ok: bool;
+  x,ok = get_user_input();
+} while !ok;
+print x;
+</code></pre><p>Same as with the while statement, you can use <code>with</code> with the repeat statement. Unlike <code>while</code> loops and <code>if</code> statements, the initialization clause is optional for repeat-until loops, as long as the variable is unconditionally initialized inside the body of the loop.<pre><code class="ai language-ai">let x: int;
+repeat with ok: bool; {
+  x,ok = get_user_input();
+} until ok;
+print x;
+</code></pre><p>The latter can be written in one line:<pre><code class="ai language-ai">let x: int;
+repeat with ok: bool; x,ok = get_user_input(); until ok;
+print x;
+</code></pre><h2 id=6-loop-control-flow>6. Loop control flow</h2><p>One can use the <code>break;</code> and <code>continue;</code> statements in order to control the flow of the execution of the loop.<h2 id=types>?. Types</h2><p>The basic types of the language are: <code>int(N)</code>, <code>float(N)</code>, <code>ptr(N)</code>, <code>bool(N)</code>, where <code>N</code> specifies the number of bytes the values of the type take. A few types are pre-declared for convenience:<pre><code class="ai language-ai">byte  == int(1)
+int   == int(8)
+float == float(8)
+ptr   == ptr(8)
+bool  == bool(1)
+</code></pre><p>Use the pre-declared versions instead of the (re-)sized ones in the ai code that doesn't require interacting with libraries written in other programming lanuages. Use the sized types only for inter-language boundary communications.
