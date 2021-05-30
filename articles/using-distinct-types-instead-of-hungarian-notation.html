@@ -1,0 +1,23 @@
+<!DOCTYPE html><html><head><meta charset=utf-8><meta name=referrer content=no-referrer><meta name=viewport content="width=device-width, initial-scale=0.7"><link rel=stylesheet href=/styles.css><link rel=favicon href=/favicon.ico><link rel=apple-touch-icon href=/favicon.ico><script src=/coloring.js defer></script><body><h1 id=making-wrong-code-wrong>Making wrong code wrong.</h1><p>There is a great article by Joel Spolsky written in 2005 called <a href=https://www.joelonsoftware.com/2005/05/11/making-wrong-code-look-wrong/>Making wrong code look wrong</a>. In that article Joel shows a difference between "Apps hungarian" and "Systems hungarian" notations and shows how the system hungarian can be applied to the code to make it <em>verifiable</em>.<p>In one of the examples he shows how you can use prefixes and suffixes in order to differentiate between "safe strings", and "unsafe strings". In short the rule was the following:<ul><li>Prefix all unsafe string variables with <code>us</code><li>Prefix all safe string variables with <code>s</code><li><code>us... = s...</code> is wrong<li><code>s = Encode(us...)</code> is good<li>Functions that expect a safe string can be suffixed with <code>...S</code><li><code>Encode(us...)</code> is good<li><code>WriteS(s...)</code> is good<li><code>WriteS(us...)</code> is wrong</ul><p>That article is named "Making wrong code look wrong", because the code verification that can be done by nothing more than reading the code line by line and noticing any <code>us... = s...</code> inconsistencies.<p>In this article I will suggest another way of achieving the same verifiability by using a type system mechanism in strictly typed languages that allow distinct type declarations. Thus the wrong code will not "look wrong", it will <em>be</em> wrong, from the point of the static type checking.<h2 id=notation>Notation</h2><p>I will dedicate a few paragraphs to present a notation. I am expecting readers to be familiar with different languages and thus different syntax. Therefore I'm not expecting everyone to be familiar with any particular syntax.<p>The following statement is a type declaration.<pre><code class="ai language-ai">type my_int = int;
+</code></pre><p>It declares a type <code>my_int</code> to be the same type as <code>int</code>. This kind of type declarations will just create an alias for <code>int</code>. Anywhere, where a value of type <code>int</code> can be used, a value of type <code>my_int</code> also can be used.<p>If you don't want <code>my_int</code> to be assignable to any variable of type <code>int</code> and any value of type <code>int</code> to be assignable to a variable of type <code>my_int</code>, then use distinct type declaration:<pre><code class="ai language-ai">type my_int ~ int;
+</code></pre><p>Example:<pre><code class="ai language-ai">type my_int ~ int;
+let a: my_int = 3; # ok, constant literals are fine
+let b: int = a;    # not ok, assignment to a variable of a different type
+</code></pre><h2 id=the-idea>The idea</h2><p>Instead of prefixing the variables you just make another distinct type for them. For the earlier example from "Making wrong code look wrong", we will make it so that the function for writing code to the page only expects safe strings, and the function that reads user input will only return unsafe strings.<pre><code class="ai language-ai">type ustring ~ string;
+type sstring ~ string;
+
+func read_user_input()->(input: ustring) {...}
+func write_string(str: sstring) {...}
+
+...
+
+
+let username = read_user_input();   # the type is derived to be u_string
+store_ustring("username", username); # ok, takes u_string
+
+...
+
+
+let username = load_ustring("username, username"); # derived to be ustring
+write_string("hello ", username, "!"); # error
+</code></pre>
