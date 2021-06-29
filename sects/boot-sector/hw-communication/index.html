@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+  <meta name="generator" content="Hugo 0.84.2" />
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Hardware communication #  Inside a computer there are various hardware components: RAM, CPU, Monitor, Hard drive, plug-in devices and so on. These devices have to be able to talk to each other in some way.
+The way in which that is done is via connecting the hardware components to the same sets of wires. One set of wires is for specifying the value to transfer between devices, the other set of wires is for specifying the address to transfer the data to.">
+<meta name="theme-color" content="#FFFFFF"><meta property="og:title" content="Hardware communication" />
+<meta property="og:description" content="Hardware communication #  Inside a computer there are various hardware components: RAM, CPU, Monitor, Hard drive, plug-in devices and so on. These devices have to be able to talk to each other in some way.
+The way in which that is done is via connecting the hardware components to the same sets of wires. One set of wires is for specifying the value to transfer between devices, the other set of wires is for specifying the address to transfer the data to." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://bumbread.github.io/sects/boot-sector/hw-communication/" /><meta property="article:section" content="sects" />
+
+
+
+<title>Hardware communication | OS Dev</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.png" type="image/x-icon">
+<link rel="stylesheet" href="/book.min.0072b4b06e277edeb4105457a66735e1d764f2b70566c56635cb2504cbcceed5.css" integrity="sha256-AHK0sG4nft60EFRXpmc14ddk8rcFZsVmNcslBMvM7tU=">
+<script defer src="/en.search.min.a00214f747e09abc25986bc2d7effec7fb82dcebb2b4de179c394fca3ffb7562.js" integrity="sha256-oAIU90fgmrwlmGvC1&#43;/&#43;x/uC3OuytN4XnDlPyj/7dWI="></script>
+<!--
+Made with Book Theme
+https://github.com/alex-shpak/hugo-book
+-->
+
+  
+</head>
+
+<body dir="ltr">
+  <input type="checkbox" class="hidden toggle" id="menu-control" />
+  <input type="checkbox" class="hidden toggle" id="toc-control" />
+  <main class="container flex">
+    <aside class="book-menu">
+      <div class="book-menu-content">
+        
+  <nav>
+<h2 class="book-brand">
+  <a href="/"><span>OS Dev</span>
+  </a>
+</h2>
+
+
+<div class="book-search">
+  <input type="text" id="book-search-input" placeholder="Search" aria-label="Search" maxlength="64" data-hotkeys="s/" />
+  <div class="book-search-spinner hidden"></div>
+  <ul id="book-search-results"></ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+  <ul>
+<li><strong>BIOS Boot Loading</strong>
+<ul>
+<li><a href="/sects/boot-sector/power-button/">When PC is turned on..</a></li>
+<li><a href="/sects/boot-sector/pc-history/">Overview of PC History</a></li>
+<li><a href="/sects/boot-sector/hw-communication/"class=active>Hardware communication</a></li>
+<li><a href="/sects/boot-sector/x86/">The x86 CPU</a></li>
+<li><a href="/sects/boot-sector/memory/">Memory organization</a></li>
+<li><a href="/sects/boot-sector/disks/">Disk organization</a></li>
+<li><a href="/sects/boot-sector/bios/">BIOS</a></li>
+<li><a href="/sects/boot-sector/mbr/">MBR</a></li>
+</ul>
+</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+</nav>
+
+
+
+
+  <script>(function(){var a=document.querySelector("aside.book-menu nav");addEventListener("beforeunload",function(b){localStorage.setItem("menu.scrollTop",a.scrollTop)}),a.scrollTop=localStorage.getItem("menu.scrollTop")})()</script>
+
+
+ 
+      </div>
+    </aside>
+
+    <div class="book-page">
+      <header class="book-header">
+        
+  <div class="flex align-center justify-between">
+  <label for="menu-control">
+    <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
+  </label>
+
+  <strong>Hardware communication</strong>
+
+  <label for="toc-control">
+    
+    <img src="/svg/toc.svg" class="book-icon" alt="Table of Contents" />
+    
+  </label>
+</div>
+
+
+  
+  <aside class="hidden clearfix">
+    
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#buses">Buses</a></li>
+    <li><a href="#1-memory-mapped-io">1. Memory-mapped IO</a></li>
+    <li><a href="#2-port-mapped-io">2. Port-mapped IO.</a></li>
+    <li><a href="#3-interrupts">3. Interrupts</a></li>
+  </ul>
+</nav>
+
+
+
+  </aside>
+  
+ 
+      </header>
+
+      
+      
+  <article class="markdown"><h1 id="hardware-communication">
+  Hardware communication
+  <a class="anchor" href="#hardware-communication">#</a>
+</h1>
+<p>Inside a computer there are various hardware components: RAM, CPU, Monitor, Hard drive, plug-in devices and so on. These devices have to be able to talk to each other in some way.</p>
+<p>The way in which that is done is via connecting the hardware components to the same sets of wires. One set of wires is for specifying the value to transfer between devices, the other set of wires is for specifying the address to transfer the data to. The third set of wires synchronises the devices so that reads do not occur during writes, and specifies the type of operation to be performed.</p>
+<h2 id="buses">
+  Buses
+  <a class="anchor" href="#buses">#</a>
+</h2>
+<p>Those sets of wires is something that&rsquo;s called a <strong>Bus</strong>. Computers usually have three buses: the <strong>address bus</strong>, the <strong>data bus</strong> and the <strong>control bus</strong>.</p>
+<p>Address bus stores the numerical value of an address, the data bus stores the data to be transferred and the control bus specifies other data such as the type of operation (read or write), the clock synchronization and other.</p>
+<p>Here&rsquo;s the basic picture:</p>
+<p><img src="/images/buses.png" alt="" /></p>
+<p>Essentially buses are a group of wires that correspond to some numerical value. 16-bit bus width means that the maximum numeric value that the bus can transfer is <code>65535</code>.</p>
+<p>The control bus could specify these kinds of operations:</p>
+<ul>
+<li>Memory Read</li>
+<li>Memory Write</li>
+<li>IO Read</li>
+<li>IO Write</li>
+<li>CPU Interrupt (hardware wants CPU reaction immediately)</li>
+</ul>
+<p>As such there are three ways of communicating with hardware.</p>
+<h2 id="1-memory-mapped-io">
+  1. Memory-mapped IO
+  <a class="anchor" href="#1-memory-mapped-io">#</a>
+</h2>
+<p>Each device gets its own memory addresses in the address space. When processor uses address bus to write data to those addresses, the device sees that and reacts correspondingly.</p>
+<p>So the address space used for this operation is the same for RAM and other devices.</p>
+<p>For example Video Graphics Array (VGA) memory behaves that way. It is mapped at the address of <code>0xB8000</code> in RAM and writing to that memory will cause the pixels on the screen to change.</p>
+<p>When using memory-mapped IO, the processor instruction used to communicate to hardware are the same as the ones used to write to memory (in x86 it&rsquo;s <code>mov</code> instruction)</p>
+<h2 id="2-port-mapped-io">
+  2. Port-mapped IO.
+  <a class="anchor" href="#2-port-mapped-io">#</a>
+</h2>
+<p>In this case the address spaces for RAM reads/writes is different than for Hardware communications. This is either done by specifying <strong>IO operation</strong> on the control bus, or by using an entirely separate <strong>IO Bus</strong>.</p>
+<p>Each device gets its own set of <strong>Ports</strong>, and CPU can read and write to each port. This is done using <strong>different</strong> instructions than accessing memory.</p>
+<p>On x86 <code>in</code> and <code>out</code> instructions are used for communications with port-mapped devices.</p>
+<h2 id="3-interrupts">
+  3. Interrupts
+  <a class="anchor" href="#3-interrupts">#</a>
+</h2>
+<p>When memory-mapped IO and port-mapped IO are a way for <em>CPU to talk to device</em>, hardware interrupts are a way for <em>devices to talk to CPU</em>.</p>
+<p>This is used for e.g. keyboards. If the communication with keyboards was done via one of the ways described above, the CPU would have to wait until the state of the keyboard changes. This consumes cycles that could be spend doing other useful work.</p>
+<p>So instead of that keyboard can notify processor that a key was pressed. When interrupt is issued, the processor temporarily stops executing the code it was executing and starts handling the <strong>interrupt handler</strong>. After interrupt handler finished executing the CPU restores its state and continues executing the thing it was executing.</p>
+</article>
+ 
+      
+
+      <footer class="book-footer">
+        
+  <div class="flex flex-wrap justify-between">
+
+
+
+
+
+</div>
+
+ 
+        
+      </footer>
+
+      
+  
+  <div class="book-comments">
+
+</div>
+  
+ 
+
+      <label for="menu-control" class="hidden book-menu-overlay"></label>
+    </div>
+
+    
+    <aside class="book-toc">
+      <div class="book-toc-content">
+        
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#buses">Buses</a></li>
+    <li><a href="#1-memory-mapped-io">1. Memory-mapped IO</a></li>
+    <li><a href="#2-port-mapped-io">2. Port-mapped IO.</a></li>
+    <li><a href="#3-interrupts">3. Interrupts</a></li>
+  </ul>
+</nav>
+
+
+ 
+      </div>
+    </aside>
+    
+  </main>
+
+  
+</body>
+
+</html>
+
+
+
+
+
+
+
+
+
+
+
+

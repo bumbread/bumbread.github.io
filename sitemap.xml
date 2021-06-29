@@ -2,20 +2,30 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>http://bumbread.github.io/docs/</loc>
-    <lastmod>2021-06-29T03:05:39+11:00</lastmod>
+    <loc>http://bumbread.github.io/sects/boot-sector/bios/</loc>
   </url><url>
-    <loc>http://bumbread.github.io/docs/boot-sector/hello/</loc>
-    <lastmod>2021-06-29T03:05:39+11:00</lastmod>
-  </url><url>
-    <loc>http://bumbread.github.io/hello/</loc>
-    <lastmod>2021-06-29T03:05:39+11:00</lastmod>
-  </url><url>
-    <loc>http://bumbread.github.io/</loc>
-    <lastmod>2021-06-29T03:05:39+11:00</lastmod>
+    <loc>http://bumbread.github.io/sects/boot-sector/mbr/</loc>
   </url><url>
     <loc>http://bumbread.github.io/categories/</loc>
   </url><url>
+    <loc>http://bumbread.github.io/sects/boot-sector/disks/</loc>
+  </url><url>
+    <loc>http://bumbread.github.io/sects/boot-sector/hw-communication/</loc>
+  </url><url>
+    <loc>http://bumbread.github.io/sects/boot-sector/hardware-communication/</loc>
+  </url><url>
+    <loc>http://bumbread.github.io/sects/boot-sector/memory/</loc>
+  </url><url>
+    <loc>http://bumbread.github.io/</loc>
+  </url><url>
+    <loc>http://bumbread.github.io/sects/boot-sector/pc-history/</loc>
+  </url><url>
+    <loc>http://bumbread.github.io/sects/</loc>
+  </url><url>
     <loc>http://bumbread.github.io/tags/</loc>
+  </url><url>
+    <loc>http://bumbread.github.io/sects/boot-sector/power-button/</loc>
+  </url><url>
+    <loc>http://bumbread.github.io/sects/boot-sector/x86/</loc>
   </url>
 </urlset>

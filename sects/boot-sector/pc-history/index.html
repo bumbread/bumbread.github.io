@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+  <meta name="generator" content="Hugo 0.84.2" />
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Overview of PC history #  Before we dive into inspecting various components that participate in boot-time function of the OS, I would like to make a special overview of the history of PCs. This will make the understanding of BIOS as well as other &ldquo;features&rdquo; of the booting process much easier.
+The term PC as in &ldquo;Personal Computer&rdquo; was mainly due to one mainstream computer from IBM called the IBM PC.">
+<meta name="theme-color" content="#FFFFFF"><meta property="og:title" content="Overview of PC history" />
+<meta property="og:description" content="Overview of PC history #  Before we dive into inspecting various components that participate in boot-time function of the OS, I would like to make a special overview of the history of PCs. This will make the understanding of BIOS as well as other &ldquo;features&rdquo; of the booting process much easier.
+The term PC as in &ldquo;Personal Computer&rdquo; was mainly due to one mainstream computer from IBM called the IBM PC." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://bumbread.github.io/sects/boot-sector/pc-history/" /><meta property="article:section" content="sects" />
+
+
+
+<title>Overview of PC history | OS Dev</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.png" type="image/x-icon">
+<link rel="stylesheet" href="/book.min.0072b4b06e277edeb4105457a66735e1d764f2b70566c56635cb2504cbcceed5.css" integrity="sha256-AHK0sG4nft60EFRXpmc14ddk8rcFZsVmNcslBMvM7tU=">
+<script defer src="/en.search.min.a00214f747e09abc25986bc2d7effec7fb82dcebb2b4de179c394fca3ffb7562.js" integrity="sha256-oAIU90fgmrwlmGvC1&#43;/&#43;x/uC3OuytN4XnDlPyj/7dWI="></script>
+<!--
+Made with Book Theme
+https://github.com/alex-shpak/hugo-book
+-->
+
+  
+</head>
+
+<body dir="ltr">
+  <input type="checkbox" class="hidden toggle" id="menu-control" />
+  <input type="checkbox" class="hidden toggle" id="toc-control" />
+  <main class="container flex">
+    <aside class="book-menu">
+      <div class="book-menu-content">
+        
+  <nav>
+<h2 class="book-brand">
+  <a href="/"><span>OS Dev</span>
+  </a>
+</h2>
+
+
+<div class="book-search">
+  <input type="text" id="book-search-input" placeholder="Search" aria-label="Search" maxlength="64" data-hotkeys="s/" />
+  <div class="book-search-spinner hidden"></div>
+  <ul id="book-search-results"></ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+  <ul>
+<li><strong>BIOS Boot Loading</strong>
+<ul>
+<li><a href="/sects/boot-sector/power-button/">When PC is turned on..</a></li>
+<li><a href="/sects/boot-sector/pc-history/"class=active>Overview of PC History</a></li>
+<li><a href="/sects/boot-sector/hw-communication/">Hardware communication</a></li>
+<li><a href="/sects/boot-sector/x86/">The x86 CPU</a></li>
+<li><a href="/sects/boot-sector/memory/">Memory organization</a></li>
+<li><a href="/sects/boot-sector/disks/">Disk organization</a></li>
+<li><a href="/sects/boot-sector/bios/">BIOS</a></li>
+<li><a href="/sects/boot-sector/mbr/">MBR</a></li>
+</ul>
+</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+</nav>
+
+
+
+
+  <script>(function(){var a=document.querySelector("aside.book-menu nav");addEventListener("beforeunload",function(b){localStorage.setItem("menu.scrollTop",a.scrollTop)}),a.scrollTop=localStorage.getItem("menu.scrollTop")})()</script>
+
+
+ 
+      </div>
+    </aside>
+
+    <div class="book-page">
+      <header class="book-header">
+        
+  <div class="flex align-center justify-between">
+  <label for="menu-control">
+    <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
+  </label>
+
+  <strong>Overview of PC history</strong>
+
+  <label for="toc-control">
+    
+    <img src="/svg/toc.svg" class="book-icon" alt="Table of Contents" />
+    
+  </label>
+</div>
+
+
+  
+  <aside class="hidden clearfix">
+    
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#1-ibm-pc">1. IBM PC</a></li>
+    <li><a href="#2-ibm-pc-compatibles">2. IBM PC Compatibles</a></li>
+    <li><a href="#3-now">3. Now</a></li>
+  </ul>
+</nav>
+
+
+
+  </aside>
+  
+ 
+      </header>
+
+      
+      
+  <article class="markdown"><h1 id="overview-of-pc-history">
+  Overview of PC history
+  <a class="anchor" href="#overview-of-pc-history">#</a>
+</h1>
+<p>Before we dive into inspecting various components that participate in boot-time function of the OS, I would like to make a special overview of the history of PCs. This will make the understanding of BIOS as well as other &ldquo;features&rdquo; of the booting process much easier.</p>
+<p>The term PC as in &ldquo;Personal Computer&rdquo; was mainly due to one mainstream computer from IBM called the <strong>IBM PC</strong>. BIOS in IBM PCs was the hardware abstraction layer that allowed OSes to perform some functions independently of the hardware present.</p>
+<h2 id="1-ibm-pc">
+  1. IBM PC
+  <a class="anchor" href="#1-ibm-pc">#</a>
+</h2>
+<p>IBM PC was using the <strong>Intel 8088</strong> processor, which is a variant of <strong>Intel 8086</strong> processor (note that the latter processor&rsquo;s name ends in &ldquo;86&rdquo;).</p>
+<p>Just as 8088, the 8086 was a 16-bit processor, meaning registers could store numbers up to <code>65535</code> and address up to <code>64 Kb</code> of memory. The address bus was <strong>20 bits</strong> however. Using the <strong>segment:offset addressing</strong>, the processor was able to address up to <strong>1 Mb</strong> of memory.</p>
+<p><strong>640 Kb</strong> of that memory was given to OS and user programs, the other <strong>384 Kb</strong> were dedicated to video memory, and the motherboard ROM.</p>
+<p>The main storage media at the time were the <strong>floppy drives</strong> and <strong>hard drives</strong>. Their physical structure was similar. Each one of them was split into 512-byte sectors. It is only possible to read or write the whole sector at once (no single-byte writes). The difference between floppies and hard drives is that floppies were used as portable media just like USB flash is used now.</p>
+<p>MS-DOS was basically the only Operating system used with this PC.</p>
+<h2 id="2-ibm-pc-compatibles">
+  2. IBM PC Compatibles
+  <a class="anchor" href="#2-ibm-pc-compatibles">#</a>
+</h2>
+<p>Since IBM PC was mainstream and never standartized at the same time, it was desirable for many companies to produce and sell similar and compatible in functionality systems. These systems are called <strong>IBM PC Compatibles</strong>.</p>
+<p>The processor was pretty much the same &ndash; 8088/8086. Because the functions of BIOS were never documented, the BIOSes on the motherboards had to be reverse-engeneered.</p>
+<p>Even though many of those systems were able to be basically compatible with IBM PC, in particular being able to load MS-DOS, they weren&rsquo;t fully compatible. It could be that some PC Compatibles were implementing extra functionality, or underimplementing some functionality. Some functionality could be implemented with bugs et cetera. Point is &ndash; they weren&rsquo;t <em>fully</em> compatible.</p>
+<h2 id="3-now">
+  3. Now
+  <a class="anchor" href="#3-now">#</a>
+</h2>
+<p>The incompatibilities between PC Compatibles have become worse as new hardware appeared. For example, as new hardware appeared and old hardware evolved, different BIOSes were handling the changes differently.</p>
+<p>For example when USB flash became used, some BIOSes chose to handle them as floppies, and other chose to handle them as drives.</p>
+<p>The Intel CPUs have evolved. 8086 had evolved into 80186, then into 80286 and then into 80386. The names of the processors all ended in &ldquo;86&rdquo;, so it was common to call them collectively as &ldquo;x86&rdquo; (this is the convention used in this book too).</p>
+<p>It was desirable for Intel to keep the backwards compatibility within their processors, so that newer processor could be able to work with older software. That&rsquo;s why even new 64-bit Intel processors start up in so-called <strong>real mode</strong>, a special 16-bit mode that uses 20-bit address bus.</p>
+<p>Even to this day many systems remain IBM PC Compatible, that&rsquo;s why knowing the history can greatly improve the understanding of why some things are the way they are.</p>
+</article>
+ 
+      
+
+      <footer class="book-footer">
+        
+  <div class="flex flex-wrap justify-between">
+
+
+
+
+
+</div>
+
+ 
+        
+      </footer>
+
+      
+  
+  <div class="book-comments">
+
+</div>
+  
+ 
+
+      <label for="menu-control" class="hidden book-menu-overlay"></label>
+    </div>
+
+    
+    <aside class="book-toc">
+      <div class="book-toc-content">
+        
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#1-ibm-pc">1. IBM PC</a></li>
+    <li><a href="#2-ibm-pc-compatibles">2. IBM PC Compatibles</a></li>
+    <li><a href="#3-now">3. Now</a></li>
+  </ul>
+</nav>
+
+
+ 
+      </div>
+    </aside>
+    
+  </main>
+
+  
+</body>
+
+</html>
+
+
+
+
+
+
+
+
+
+
+
+

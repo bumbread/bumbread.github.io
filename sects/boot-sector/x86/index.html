@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+  <meta name="generator" content="Hugo 0.84.2" />
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="The x86 processors #  Now we&rsquo;ll talk about the x86 processors.
+The 8086 processor had 16-bit data bus and 20-bit address bus. All x86 processors start in the real mode, that basically restricts the operands to 16 bits and the address bus to 20 bits, making the processor compatible with 8086.
+The general purpose registers are the registers that can be used for most operations by the processor are AX, BX, CX, DX, SI (source index), and DI (destination index).">
+<meta name="theme-color" content="#FFFFFF"><meta property="og:title" content="x86" />
+<meta property="og:description" content="The x86 processors #  Now we&rsquo;ll talk about the x86 processors.
+The 8086 processor had 16-bit data bus and 20-bit address bus. All x86 processors start in the real mode, that basically restricts the operands to 16 bits and the address bus to 20 bits, making the processor compatible with 8086.
+The general purpose registers are the registers that can be used for most operations by the processor are AX, BX, CX, DX, SI (source index), and DI (destination index)." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://bumbread.github.io/sects/boot-sector/x86/" /><meta property="article:section" content="sects" />
+
+
+
+<title>x86 | OS Dev</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.png" type="image/x-icon">
+<link rel="stylesheet" href="/book.min.0072b4b06e277edeb4105457a66735e1d764f2b70566c56635cb2504cbcceed5.css" integrity="sha256-AHK0sG4nft60EFRXpmc14ddk8rcFZsVmNcslBMvM7tU=">
+<script defer src="/en.search.min.a00214f747e09abc25986bc2d7effec7fb82dcebb2b4de179c394fca3ffb7562.js" integrity="sha256-oAIU90fgmrwlmGvC1&#43;/&#43;x/uC3OuytN4XnDlPyj/7dWI="></script>
+<!--
+Made with Book Theme
+https://github.com/alex-shpak/hugo-book
+-->
+
+  
+</head>
+
+<body dir="ltr">
+  <input type="checkbox" class="hidden toggle" id="menu-control" />
+  <input type="checkbox" class="hidden toggle" id="toc-control" />
+  <main class="container flex">
+    <aside class="book-menu">
+      <div class="book-menu-content">
+        
+  <nav>
+<h2 class="book-brand">
+  <a href="/"><span>OS Dev</span>
+  </a>
+</h2>
+
+
+<div class="book-search">
+  <input type="text" id="book-search-input" placeholder="Search" aria-label="Search" maxlength="64" data-hotkeys="s/" />
+  <div class="book-search-spinner hidden"></div>
+  <ul id="book-search-results"></ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+  <ul>
+<li><strong>BIOS Boot Loading</strong>
+<ul>
+<li><a href="/sects/boot-sector/power-button/">When PC is turned on..</a></li>
+<li><a href="/sects/boot-sector/pc-history/">Overview of PC History</a></li>
+<li><a href="/sects/boot-sector/hw-communication/">Hardware communication</a></li>
+<li><a href="/sects/boot-sector/x86/"class=active>The x86 CPU</a></li>
+<li><a href="/sects/boot-sector/memory/">Memory organization</a></li>
+<li><a href="/sects/boot-sector/disks/">Disk organization</a></li>
+<li><a href="/sects/boot-sector/bios/">BIOS</a></li>
+<li><a href="/sects/boot-sector/mbr/">MBR</a></li>
+</ul>
+</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+</nav>
+
+
+
+
+  <script>(function(){var a=document.querySelector("aside.book-menu nav");addEventListener("beforeunload",function(b){localStorage.setItem("menu.scrollTop",a.scrollTop)}),a.scrollTop=localStorage.getItem("menu.scrollTop")})()</script>
+
+
+ 
+      </div>
+    </aside>
+
+    <div class="book-page">
+      <header class="book-header">
+        
+  <div class="flex align-center justify-between">
+  <label for="menu-control">
+    <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
+  </label>
+
+  <strong>x86</strong>
+
+  <label for="toc-control">
+    
+    <img src="/svg/toc.svg" class="book-icon" alt="Table of Contents" />
+    
+  </label>
+</div>
+
+
+  
+  <aside class="hidden clearfix">
+    
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#segmentation">Segmentation</a></li>
+    <li><a href="#further-evolution">Further evolution</a></li>
+    <li><a href="#conventions">Conventions</a></li>
+  </ul>
+</nav>
+
+
+
+  </aside>
+  
+ 
+      </header>
+
+      
+      
+  <article class="markdown"><h1 id="the-x86-processors">
+  The x86 processors
+  <a class="anchor" href="#the-x86-processors">#</a>
+</h1>
+<p>Now we&rsquo;ll talk about the x86 processors.</p>
+<p>The 8086 processor had 16-bit data bus and 20-bit address bus. All x86 processors start in the <strong>real mode</strong>, that basically restricts the operands to 16 bits and the address bus to 20 bits, making the processor compatible with 8086.</p>
+<p>The <strong>general purpose registers</strong> are the registers that can be used for most operations by the processor are <code>AX</code>, <code>BX</code>, <code>CX</code>, <code>DX</code>, <code>SI</code> (source index), and <code>DI</code> (destination index). All of these registers are 16 bits wide.</p>
+<p>8086 also had two registers for managing the stack: <code>SP</code> (stack pointer) and <code>BP</code> (base pointer).</p>
+<p>The <code>IP</code> register contained the address of the next instruction to be executed and can not be altered directly. It can only be changed by e.g. performing a <code>jmp</code> instruction.</p>
+<table>
+<thead>
+<tr>
+<th>Register</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AX,BX,CX,DX</td>
+<td>General purpose registers</td>
+</tr>
+<tr>
+<td>SI</td>
+<td>Source index in string operation</td>
+</tr>
+<tr>
+<td>DI</td>
+<td>Destination index in string operations</td>
+</tr>
+<tr>
+<td>SP</td>
+<td>Stack pointer</td>
+</tr>
+<tr>
+<td>BP</td>
+<td>Stack frame base pointer</td>
+</tr>
+<tr>
+<td>IP</td>
+<td>Instruction pointer</td>
+</tr>
+</tbody>
+</table>
+<p>The address bus size in 8086 is 20 bits, which allows to address up to 1 Mb of memory. But all the registers are 16 bits wide. Just using the registers the processor would have been able to address 64 Kb of memory. How does the processor address the rest of the memory?</p>
+<h2 id="segmentation">
+  Segmentation
+  <a class="anchor" href="#segmentation">#</a>
+</h2>
+<p>The 8086 CPUs have four <strong>Segment Registers</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Segment</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DS</td>
+<td>Default data segment</td>
+</tr>
+<tr>
+<td>ES</td>
+<td>Extra segment</td>
+</tr>
+<tr>
+<td>CS</td>
+<td>Code segment</td>
+</tr>
+<tr>
+<td>SS</td>
+<td>Stack segment</td>
+</tr>
+</tbody>
+</table>
+<p>When the segment is not specified in x86 instructions, the default segment is chosen: usually <code>DS</code>, for jumps, calls and other &ldquo;code&rdquo; instructions, it&rsquo;s <code>CS</code>, for stack operations its <code>SS</code>.</p>
+<p>So every address in x86 can be represented by <code>segment:offset</code> pair. In order to obtain <strong>the physical address</strong>, i.e. what gets onto the address bus, the processor multiplies segment by 16 and adds the offset.</p>
+<pre><code>PhysicalAddress = 16 * segment + offset
+                = (segment &lt;&lt; 4) + offset
+</code></pre><p>This can be viewed in multiple ways, the easiest is imagining that an extra zero is written beside the segment.</p>
+<p>However, there&rsquo;s an interesting feature of this encoding: we can obtain addressess <strong>higher than 1 Mb</strong>. Let&rsquo;s try converting the address <code>FFFF:FFFF</code> to physical. We get <code>10ffef</code>, with the extra &ldquo;1&rdquo; bit on the 21-st bit.</p>
+<p>In 8086 this calculation would have wrapped around and the physical address would have been <code>FFEF</code>. With later processors, the address bus has become bigger, so what they did is they artificially performed the logical AND of the 21st address line with &ldquo;0&rdquo;, so whatever the result was the 21-st bit would have been zero.</p>
+<p>This is called <strong>A20 Gate</strong>. A20 stands for 20-th address line (they are counted from zero). Every x86 processor can only access <em>odd megabytes</em>, unless the A20 line is enabled.</p>
+<h2 id="further-evolution">
+  Further evolution
+  <a class="anchor" href="#further-evolution">#</a>
+</h2>
+<p>8086 processor has evolved into 80186. There weren&rsquo;t many improvements that interest us.</p>
+<p>80186&rsquo;s successor was 80286. That processor introduced <strong>protected mode</strong> (but it still started in 8086-compatible <strong>real mode</strong>). Though that protected mode wasn&rsquo;t widely used. 80286 also extended the address bus to 24 bits (16 Mb).</p>
+<p>80386 (later renamed to i386) was the next processor in line. It was the first <strong>32-bit</strong> processor in the x86 line. It enhanced the support for multitasking OS.</p>
+<p>80386 also started up in real mode, but it could use 32-bit instructions in that mode, by prefixing instructions with operand size extend prefix byte and address size extend byte.</p>
+<h2 id="conventions">
+  Conventions
+  <a class="anchor" href="#conventions">#</a>
+</h2>
+<p><strong>x86</strong> refers to the Intel processor architecture, that evolved from the Intel 8086 processor.</p>
+<p><strong>i386</strong> refers to x86 processors that are compatible with intel 80386.</p>
+</article>
+ 
+      
+
+      <footer class="book-footer">
+        
+  <div class="flex flex-wrap justify-between">
+
+
+
+
+
+</div>
+
+ 
+        
+      </footer>
+
+      
+  
+  <div class="book-comments">
+
+</div>
+  
+ 
+
+      <label for="menu-control" class="hidden book-menu-overlay"></label>
+    </div>
+
+    
+    <aside class="book-toc">
+      <div class="book-toc-content">
+        
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#segmentation">Segmentation</a></li>
+    <li><a href="#further-evolution">Further evolution</a></li>
+    <li><a href="#conventions">Conventions</a></li>
+  </ul>
+</nav>
+
+
+ 
+      </div>
+    </aside>
+    
+  </main>
+
+  
+</body>
+
+</html>
+
+
+
+
+
+
+
+
+
+
+
+

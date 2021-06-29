@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+  <meta name="generator" content="Hugo 0.84.2" />
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Disk organization #  We had already discussed that the during IBM PC time the main two non-volatile memory storage devices were Hard drives and Floppy disks, which turn out to have similar structure.
+So it would be useful to discuss the physical structure of the hard drives first.
+Physical structure #  The disk consists of basic addressable units &ndash; sectors. One can not read or write less than a sector direcrly off of a disk.">
+<meta name="theme-color" content="#FFFFFF"><meta property="og:title" content="Disk organization" />
+<meta property="og:description" content="Disk organization #  We had already discussed that the during IBM PC time the main two non-volatile memory storage devices were Hard drives and Floppy disks, which turn out to have similar structure.
+So it would be useful to discuss the physical structure of the hard drives first.
+Physical structure #  The disk consists of basic addressable units &ndash; sectors. One can not read or write less than a sector direcrly off of a disk." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://bumbread.github.io/sects/boot-sector/disks/" /><meta property="article:section" content="sects" />
+
+
+
+<title>Disk organization | OS Dev</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.png" type="image/x-icon">
+<link rel="stylesheet" href="/book.min.0072b4b06e277edeb4105457a66735e1d764f2b70566c56635cb2504cbcceed5.css" integrity="sha256-AHK0sG4nft60EFRXpmc14ddk8rcFZsVmNcslBMvM7tU=">
+<script defer src="/en.search.min.a00214f747e09abc25986bc2d7effec7fb82dcebb2b4de179c394fca3ffb7562.js" integrity="sha256-oAIU90fgmrwlmGvC1&#43;/&#43;x/uC3OuytN4XnDlPyj/7dWI="></script>
+<!--
+Made with Book Theme
+https://github.com/alex-shpak/hugo-book
+-->
+
+  
+</head>
+
+<body dir="ltr">
+  <input type="checkbox" class="hidden toggle" id="menu-control" />
+  <input type="checkbox" class="hidden toggle" id="toc-control" />
+  <main class="container flex">
+    <aside class="book-menu">
+      <div class="book-menu-content">
+        
+  <nav>
+<h2 class="book-brand">
+  <a href="/"><span>OS Dev</span>
+  </a>
+</h2>
+
+
+<div class="book-search">
+  <input type="text" id="book-search-input" placeholder="Search" aria-label="Search" maxlength="64" data-hotkeys="s/" />
+  <div class="book-search-spinner hidden"></div>
+  <ul id="book-search-results"></ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+  <ul>
+<li><strong>BIOS Boot Loading</strong>
+<ul>
+<li><a href="/sects/boot-sector/power-button/">When PC is turned on..</a></li>
+<li><a href="/sects/boot-sector/pc-history/">Overview of PC History</a></li>
+<li><a href="/sects/boot-sector/hw-communication/">Hardware communication</a></li>
+<li><a href="/sects/boot-sector/x86/">The x86 CPU</a></li>
+<li><a href="/sects/boot-sector/memory/">Memory organization</a></li>
+<li><a href="/sects/boot-sector/disks/"class=active>Disk organization</a></li>
+<li><a href="/sects/boot-sector/bios/">BIOS</a></li>
+<li><a href="/sects/boot-sector/mbr/">MBR</a></li>
+</ul>
+</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+</nav>
+
+
+
+
+  <script>(function(){var a=document.querySelector("aside.book-menu nav");addEventListener("beforeunload",function(b){localStorage.setItem("menu.scrollTop",a.scrollTop)}),a.scrollTop=localStorage.getItem("menu.scrollTop")})()</script>
+
+
+ 
+      </div>
+    </aside>
+
+    <div class="book-page">
+      <header class="book-header">
+        
+  <div class="flex align-center justify-between">
+  <label for="menu-control">
+    <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
+  </label>
+
+  <strong>Disk organization</strong>
+
+  <label for="toc-control">
+    
+    <img src="/svg/toc.svg" class="book-icon" alt="Table of Contents" />
+    
+  </label>
+</div>
+
+
+  
+  <aside class="hidden clearfix">
+    
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#physical-structure">Physical structure</a></li>
+    <li><a href="#chs-addressing">CHS Addressing</a></li>
+    <li><a href="#lba-addressing">LBA addressing</a></li>
+  </ul>
+</nav>
+
+
+
+  </aside>
+  
+ 
+      </header>
+
+      
+      
+  <article class="markdown"><h1 id="disk-organization">
+  Disk organization
+  <a class="anchor" href="#disk-organization">#</a>
+</h1>
+<p>We had already discussed that the during IBM PC time the main two <strong>non-volatile</strong> memory storage devices were Hard drives and Floppy disks, which turn out to have similar structure.</p>
+<p>So it would be useful to discuss the physical structure of the hard drives first.</p>
+<h2 id="physical-structure">
+  Physical structure
+  <a class="anchor" href="#physical-structure">#</a>
+</h2>
+<p>The disk consists of basic addressable units &ndash; <strong>sectors</strong>. One can not read or write less than a sector direcrly off of a disk.</p>
+<p><img src="/images/hard_drive.png" alt="" /></p>
+<p>Group of sectors located at the same radius from the origin are organized into <strong>tracks</strong>. The tracks have circular shape. Group of tracks that spans along multiple heads is called <strong>cylinder</strong>.</p>
+<h2 id="chs-addressing">
+  CHS Addressing
+  <a class="anchor" href="#chs-addressing">#</a>
+</h2>
+<p>Early hard drives did not have an embedded <strong>controller</strong>, that could do address transformations. You could not say &ldquo;give me 128th sector&rdquo;. Instead, you had to specify the location of a sector with accordance to its physical structure &ndash; giving the number of the sector, intex of the head and the cylinder.</p>
+<p>This is what CHS (Cylinder-Head-Sector) addressing is. Address of a sector is specified with a tuple of three numbers (C/H/S). The numbering of sectors starts from one, so the sector number can not be zero. Cylinder and Head are zero-based.</p>
+<p>BIOSes use 8 bytes for head, 10 bytes for cylinder and 6 bytes for the sector. The whole data fits in 3 bytes:</p>
+<pre><code>CCCCCCCC CCSSSSSS HHHHHHHH
+</code></pre><p>Where C specifies a cylinder bit, S specifies a sector bit, and H specifies a head bit.</p>
+<p>And since the addressing information was limited by these three bytes, there were limits for each of the measurements:</p>
+<ul>
+<li>Sector: <code>1..63</code></li>
+<li>Cylinder: <code>0..1023</code></li>
+<li>Head: <code>0..255</code></li>
+</ul>
+<p>Although the actual limit was 255, there was a bug in IBM PC BIOS, that would crash if it saw a drive with 255 heads. Therefore the actual limit for the heads index was 254.</p>
+<p>So CHS addressing supported a drive with at most 63 sectors per track, 1024 tracks per head and 255 heads. Given the sector is 512 bytes, the limit for the CHS addressing is:</p>
+<pre><code>512*63*1024*255 = 8422686720 bytes = 8032.5 Mb
+</code></pre><p>About 8 Gb. That is way too little to support modern hard drives and USB flashes. And since some devices had a different geometry, e.g. different number of tracks per second, the actual limit is <em>even less</em>.</p>
+<p>IBM PC only supported floppy disk storage. So it makes sense why the 8 Gb limit was fine. (Hard disk storage was introduced with IBM PC/XT)</p>
+<p>Sometimes to get around that some devices had embedded a <strong>controller</strong> that would lie to BIOS about device&rsquo;s geometry. And when BIOS was talking to the device, the controller would implicitly convert the &ldquo;virtual&rdquo; CHS address that BIOS gave it into the &ldquo;real&rdquo; one that was matching the device&rsquo;s geometry.</p>
+<h2 id="lba-addressing">
+  LBA addressing
+  <a class="anchor" href="#lba-addressing">#</a>
+</h2>
+<p>To further overcome the 8 Gb limit of CHS addressing IBM introduced <strong>BIOS Enhanced Disk Drive Services</strong>, that introduced a new 64-bit addressation of the sectors on the disk.</p>
+<p>The LBA address was a single 64-bit number corresponding to the zero-based index of the sector. This is pretty straightforward. With this the limit was raised until <code>8589934592 Tb</code>. That&rsquo;s pretty much infinite.</p>
+<p>However by ATA-6 specification only 48 bits are used. So the actual limit is <code>131072 Tb</code>.</p>
+</article>
+ 
+      
+
+      <footer class="book-footer">
+        
+  <div class="flex flex-wrap justify-between">
+
+
+
+
+
+</div>
+
+ 
+        
+      </footer>
+
+      
+  
+  <div class="book-comments">
+
+</div>
+  
+ 
+
+      <label for="menu-control" class="hidden book-menu-overlay"></label>
+    </div>
+
+    
+    <aside class="book-toc">
+      <div class="book-toc-content">
+        
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#physical-structure">Physical structure</a></li>
+    <li><a href="#chs-addressing">CHS Addressing</a></li>
+    <li><a href="#lba-addressing">LBA addressing</a></li>
+  </ul>
+</nav>
+
+
+ 
+      </div>
+    </aside>
+    
+  </main>
+
+  
+</body>
+
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
