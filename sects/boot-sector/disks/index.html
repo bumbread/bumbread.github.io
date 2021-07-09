@@ -21,7 +21,7 @@ Physical structure #  The disk consists of basic addressable units &ndash; secto
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" href="/favicon.png" type="image/x-icon">
 <link rel="stylesheet" href="/book.min.0072b4b06e277edeb4105457a66735e1d764f2b70566c56635cb2504cbcceed5.css" integrity="sha256-AHK0sG4nft60EFRXpmc14ddk8rcFZsVmNcslBMvM7tU=">
-<script defer src="/en.search.min.a00214f747e09abc25986bc2d7effec7fb82dcebb2b4de179c394fca3ffb7562.js" integrity="sha256-oAIU90fgmrwlmGvC1&#43;/&#43;x/uC3OuytN4XnDlPyj/7dWI="></script>
+<script defer src="/en.search.min.9e4e112595c8ef5c75fe97676ced6def34e7484b48b0e357cdf0f80b2f80e19e.js" integrity="sha256-nk4RJZXI71x1/pdnbO1t7zTnSEtIsONXzfD4Cy&#43;A4Z4="></script>
 <!--
 Made with Book Theme
 https://github.com/alex-shpak/hugo-book
@@ -169,6 +169,7 @@ https://github.com/alex-shpak/hugo-book
 </code></pre><p>About 8 Gb. That is way too little to support modern hard drives and USB flashes. And since some devices had a different geometry, e.g. different number of tracks per second, the actual limit is <em>even less</em>.</p>
 <p>IBM PC only supported floppy disk storage. So it makes sense why the 8 Gb limit was fine. (Hard disk storage was introduced with IBM PC/XT)</p>
 <p>Sometimes to get around that some devices had embedded a <strong>controller</strong> that would lie to BIOS about device&rsquo;s geometry. And when BIOS was talking to the device, the controller would implicitly convert the &ldquo;virtual&rdquo; CHS address that BIOS gave it into the &ldquo;real&rdquo; one that was matching the device&rsquo;s geometry.</p>
+<p>So for modern hard disks CHS address no longer correspond to the physical layout of the drive.</p>
 <h2 id="lba-addressing">
   LBA addressing
   <a class="anchor" href="#lba-addressing">#</a>

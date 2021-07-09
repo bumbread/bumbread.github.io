@@ -5,19 +5,21 @@
   <meta name="generator" content="Hugo 0.84.2" />
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="">
-<meta name="theme-color" content="#FFFFFF"><meta property="og:title" content="" />
-<meta property="og:description" content="" />
+<meta name="description" content="BIOS &ndash; Basic Input-Output System #  BIOS is a program that is stored on the Motherboard ROM. When CPU starts up the first thing that runs is BIOS code. BIOS performs the following:
+ Initializes hardware (display, keyboard, disk) drivers that are necessary for the OS to boot. Sets up its API for use by the OS in the form of Interrupts. Reads setup information stored in CMOS (a special memory chip on motherboard) and find the first Bootable disk.">
+<meta name="theme-color" content="#FFFFFF"><meta property="og:title" content="BIOS" />
+<meta property="og:description" content="BIOS &ndash; Basic Input-Output System #  BIOS is a program that is stored on the Motherboard ROM. When CPU starts up the first thing that runs is BIOS code. BIOS performs the following:
+ Initializes hardware (display, keyboard, disk) drivers that are necessary for the OS to boot. Sets up its API for use by the OS in the form of Interrupts. Reads setup information stored in CMOS (a special memory chip on motherboard) and find the first Bootable disk." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="http://bumbread.github.io/sects/boot-sector/bios/" /><meta property="article:section" content="sects" />
 
 
 
-<title>Bios | OS Dev</title>
+<title>BIOS | OS Dev</title>
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" href="/favicon.png" type="image/x-icon">
 <link rel="stylesheet" href="/book.min.0072b4b06e277edeb4105457a66735e1d764f2b70566c56635cb2504cbcceed5.css" integrity="sha256-AHK0sG4nft60EFRXpmc14ddk8rcFZsVmNcslBMvM7tU=">
-<script defer src="/en.search.min.a00214f747e09abc25986bc2d7effec7fb82dcebb2b4de179c394fca3ffb7562.js" integrity="sha256-oAIU90fgmrwlmGvC1&#43;/&#43;x/uC3OuytN4XnDlPyj/7dWI="></script>
+<script defer src="/en.search.min.9e4e112595c8ef5c75fe97676ced6def34e7484b48b0e357cdf0f80b2f80e19e.js" integrity="sha256-nk4RJZXI71x1/pdnbO1t7zTnSEtIsONXzfD4Cy&#43;A4Z4="></script>
 <!--
 Made with Book Theme
 https://github.com/alex-shpak/hugo-book
@@ -100,7 +102,7 @@ https://github.com/alex-shpak/hugo-book
     <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
   </label>
 
-  <strong>Bios</strong>
+  <strong>BIOS</strong>
 
   <label for="toc-control">
     
@@ -114,7 +116,18 @@ https://github.com/alex-shpak/hugo-book
   <aside class="hidden clearfix">
     
   
-<nav id="TableOfContents"></nav>
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#incompatibilities-between-bioses">Incompatibilities between BIOSes</a>
+      <ul>
+        <li><a href="#1-the-value-of-code-segment-and-instruction-pointer-on-bootloader-entry">1. The value of code segment and instruction pointer on bootloader entry</a></li>
+        <li><a href="#2-stack-location">2. Stack location</a></li>
+        <li><a href="#3-segment-registers-ds-es">3. Segment registers DS, ES</a></li>
+        <li><a href="#4-directionality-flag-df">4. Directionality flag DF</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
 
 
 
@@ -125,7 +138,69 @@ https://github.com/alex-shpak/hugo-book
 
       
       
-  <article class="markdown"></article>
+  <article class="markdown"><h1 id="bios----basic-input-output-system">
+  BIOS &ndash; Basic Input-Output System
+  <a class="anchor" href="#bios----basic-input-output-system">#</a>
+</h1>
+<p>BIOS is a program that is stored on the <strong>Motherboard ROM</strong>. When CPU starts up the first thing that runs is BIOS code. BIOS performs the following:</p>
+<ul>
+<li>Initializes hardware (display, keyboard, disk) drivers that are necessary for the OS to boot.</li>
+<li>Sets up its API for use by the OS in the form of <strong>Interrupts</strong>.</li>
+<li>Reads setup information stored in <strong>CMOS</strong> (a special memory chip on motherboard) and find the first <strong>Bootable disk</strong>.</li>
+<li>Load the first 512 bytes of the bootable disk into the memory at address <code>7C00</code> and transfer execution control to the bootloader code.</li>
+</ul>
+<p>BIOS basically provides OS with the ability to boot itself independently of the hardware present.</p>
+<p>BIOS provides its services to the OS as CPU <strong>Interrupts</strong>. In order to request a BIOS service, one has to call interrupt instruction on the CPU and provide parameters in the registers.</p>
+<p>Interrupt vector 10 is a display functions service, interrupt vector 13 is used as disk services. Here&rsquo;s the example of using display functions to draw a character to the screen:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-nasm" data-lang="nasm"><span style="color:#a6e22e">mov</span> ah, <span style="color:#ae81ff">0x0E</span>   <span style="color:#75715e">;; 0x0E means &#34;Print character&#34; function</span>
+<span style="color:#a6e22e">mov</span> al, <span style="color:#e6db74">&#39;H&#39;</span>    <span style="color:#75715e">;; Character to print</span>
+<span style="color:#a6e22e">mov</span> dx, <span style="color:#ae81ff">0x000F</span> <span style="color:#75715e">;; Page number and Color</span>
+<span style="color:#a6e22e">int</span> <span style="color:#ae81ff">10h</span>
+</code></pre></div><p>Upon executing this program, a white character &lsquo;H&rsquo; should appear on the screen.</p>
+<h2 id="incompatibilities-between-bioses">
+  Incompatibilities between BIOSes
+  <a class="anchor" href="#incompatibilities-between-bioses">#</a>
+</h2>
+<p>Since the IBM PC era, computers were evolving, and new hardware appeared. IBM PC Compatibles needed to add the support for that hardware, and since there wasn&rsquo;t any standard to which interrupt numbers correspond to which services and how the hardware should be handled, different PC manufacturers handled hardware differently.</p>
+<p>Other source of incompatibility is the direct effect of reverse engeneering of the original IBM PC by the manufacturers. Since the original BIOS wasn&rsquo;t copied, but <em>reverse-engeneered</em>, some parts remained incompatible.</p>
+<p>As such the software that runs under BIOS (in particular that refers to the bootloader) should be careful not to make too much assumptions about the environment it runs in.</p>
+<p>Now I will descript some pitfalls that can occur when writing a portable bootloader. Part of bootloader in the <strong>MBR</strong> should set up the environment so that the rest of the bootloader can make assumptions about it.</p>
+<h3 id="1-the-value-of-code-segment-and-instruction-pointer-on-bootloader-entry">
+  1. The value of code segment and instruction pointer on bootloader entry
+  <a class="anchor" href="#1-the-value-of-code-segment-and-instruction-pointer-on-bootloader-entry">#</a>
+</h3>
+<p>As I told earlier, the bootloader is loaded by BIOS at address <code>7C00</code>. However, there are many values segment:offset pairs that resolve to the same address. A trivial pair would be <code>0000:7C00</code>, but <code>07C0:0000</code> is also possible.</p>
+<p>Most BIOSes set it to <code>0000:7C00</code>, but some BIOSes set it to <code>07C0:0000</code>. In any case it is a good idea to reset the address e.g. to <code>0000:7C00</code> by performing a <strong>Long jump</strong> to it.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-nasm" data-lang="nasm"><span style="color:#a6e22e">jmp</span> <span style="color:#ae81ff">0000</span>:.next
+.next:
+</code></pre></div><p>Long jump sets the code segment value to the one specified in the operand.</p>
+<h3 id="2-stack-location">
+  2. Stack location
+  <a class="anchor" href="#2-stack-location">#</a>
+</h3>
+<p>Where BIOS puts stack is undefined. Depending on the particular way your bootloader works, assuming a good stack location may end up badly. For example BIOS may set up the stack at the point, where you load the second stage bootloader to.</p>
+<p>We could set the stack at <code>07C00</code>. Note that when the next value is pushed to the stack, the stack pointer <em>is subtracted from first</em>, <em>then the data is pushed</em>. So the first word would be pushed right below the boot sector.</p>
+<p>Alternatively we could set the stack to <code>9000:0000</code>. In such case, when the value of <code>SP</code> is decremented, the register overflows, and the data is pushed <em>at the end of the segment</em>.</p>
+<p>Here&rsquo;s the example of setting up the stack at the latter location:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-nasm" data-lang="nasm"><span style="color:#a6e22e">mov</span> bx, <span style="color:#ae81ff">9000h</span>
+<span style="color:#a6e22e">mov</span> ss, bx
+<span style="color:#a6e22e">mov</span> sp, <span style="color:#ae81ff">0000h</span>
+</code></pre></div><h3 id="3-segment-registers-ds-es">
+  3. Segment registers DS, ES
+  <a class="anchor" href="#3-segment-registers-ds-es">#</a>
+</h3>
+<p>The default data segment register, and extra segment register are also pretty much undefined. Its a good idea to zero-out the segments.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-nasm" data-lang="nasm"><span style="color:#a6e22e">mov</span> bx, <span style="color:#ae81ff">0000h</span>   <span style="color:#75715e">; `xor bx, bx` does the same, but takes less space</span>
+<span style="color:#a6e22e">mov</span> ds, bx
+<span style="color:#a6e22e">mov</span> es, bx
+</code></pre></div><h3 id="4-directionality-flag-df">
+  4. Directionality flag DF
+  <a class="anchor" href="#4-directionality-flag-df">#</a>
+</h3>
+<p>If you&rsquo;re a big fan of x86 string instructions, i.e. <code>stosb</code>, <code>lodsb</code>, <code>movsb</code>, then you should know that they change the value of <code>SI</code> and <code>DI</code> registers (either post-decrement or post-increment) depending on the value of <code>DF</code> flag.</p>
+<p>Program should clear the direction flag if it uses these instructions and assumes right directionality.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-nasm" data-lang="nasm"><span style="color:#a6e22e">cld</span>
+</code></pre></div></article>
  
       
 
@@ -145,6 +220,10 @@ https://github.com/alex-shpak/hugo-book
 
       
   
+  <div class="book-comments">
+
+</div>
+  
  
 
       <label for="menu-control" class="hidden book-menu-overlay"></label>
@@ -155,7 +234,18 @@ https://github.com/alex-shpak/hugo-book
       <div class="book-toc-content">
         
   
-<nav id="TableOfContents"></nav>
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#incompatibilities-between-bioses">Incompatibilities between BIOSes</a>
+      <ul>
+        <li><a href="#1-the-value-of-code-segment-and-instruction-pointer-on-bootloader-entry">1. The value of code segment and instruction pointer on bootloader entry</a></li>
+        <li><a href="#2-stack-location">2. Stack location</a></li>
+        <li><a href="#3-segment-registers-ds-es">3. Segment registers DS, ES</a></li>
+        <li><a href="#4-directionality-flag-df">4. Directionality flag DF</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
 
 
  

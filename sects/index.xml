@@ -7,21 +7,13 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language><atom:link href="http://bumbread.github.io/sects/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title></title>
+      <title>BIOS</title>
       <link>http://bumbread.github.io/sects/boot-sector/bios/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>http://bumbread.github.io/sects/boot-sector/bios/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title></title>
-      <link>http://bumbread.github.io/sects/boot-sector/mbr/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>http://bumbread.github.io/sects/boot-sector/mbr/</guid>
-      <description></description>
+      <description>BIOS &amp;ndash; Basic Input-Output System #  BIOS is a program that is stored on the Motherboard ROM. When CPU starts up the first thing that runs is BIOS code. BIOS performs the following:
+ Initializes hardware (display, keyboard, disk) drivers that are necessary for the OS to boot. Sets up its API for use by the OS in the form of Interrupts. Reads setup information stored in CMOS (a special memory chip on motherboard) and find the first Bootable disk.</description>
     </item>
     
     <item>
@@ -55,6 +47,17 @@ The way in which that is done is via connecting the hardware components to the s
     </item>
     
     <item>
+      <title>MBR</title>
+      <link>http://bumbread.github.io/sects/boot-sector/mbr/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>http://bumbread.github.io/sects/boot-sector/mbr/</guid>
+      <description>MBR &amp;ndash; Master boot record #  MBR refers to the very first 512 bytes of the disk. MBR is loaded by BIOS into the memory at address 7C00. The MBR holds the code and some metadata about the drive that the OS can use in the boot process, as well as OS&amp;rsquo;s bootloader itself.
+Here&amp;rsquo;s the basic structure of the MBR:
+   Address Size Description     0000-01BD 446 byte Bootloader   01BE-01CD 16 byte 1-st partition entry   01CE-01DD 16 byte 2-nd partition entry   01DE-01ED 16 byte 3-rd partition entry   01EE-01FD 16 byte 4-th partition entry   01FE-01FF 2 byte Magic number 55h AAh    The magic number is used by the BIOS to determine whether the disk is bootable.</description>
+    </item>
+    
+    <item>
       <title>Memory organization</title>
       <link>http://bumbread.github.io/sects/boot-sector/memory/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
@@ -72,7 +75,7 @@ After BIOS loads MBR into RAM, the memory is in a certain state.
       
       <guid>http://bumbread.github.io/sects/boot-sector/pc-history/</guid>
       <description>Overview of PC history #  Before we dive into inspecting various components that participate in boot-time function of the OS, I would like to make a special overview of the history of PCs. This will make the understanding of BIOS as well as other &amp;ldquo;features&amp;rdquo; of the booting process much easier.
-The term PC as in &amp;ldquo;Personal Computer&amp;rdquo; was mainly due to one mainstream computer from IBM called the IBM PC.</description>
+The term PC was due to one mainstream computer from IBM called the IBM PC. BIOS in IBM PCs was the hardware abstraction layer that allowed OSes to perform hardware input/output functions independently of the actual hardware used in the system.</description>
     </item>
     
     <item>

@@ -4,8 +4,6 @@
   <url>
     <loc>http://bumbread.github.io/sects/boot-sector/bios/</loc>
   </url><url>
-    <loc>http://bumbread.github.io/sects/boot-sector/mbr/</loc>
-  </url><url>
     <loc>http://bumbread.github.io/categories/</loc>
   </url><url>
     <loc>http://bumbread.github.io/sects/boot-sector/disks/</loc>
@@ -13,6 +11,8 @@
     <loc>http://bumbread.github.io/sects/boot-sector/hw-communication/</loc>
   </url><url>
     <loc>http://bumbread.github.io/sects/boot-sector/hardware-communication/</loc>
+  </url><url>
+    <loc>http://bumbread.github.io/sects/boot-sector/mbr/</loc>
   </url><url>
     <loc>http://bumbread.github.io/sects/boot-sector/memory/</loc>
   </url><url>
