@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>OS Dev</title>
+    <title>OS development notes</title>
     <link>http://bumbread.github.io/</link>
-    <description>Recent content on OS Dev</description>
+    <description>Recent content on OS development notes</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language><atom:link href="http://bumbread.github.io/index.xml" rel="self" type="application/rss+xml" />
     <item>
@@ -75,7 +75,7 @@ After BIOS loads MBR into RAM, the memory is in a certain state.
       
       <guid>http://bumbread.github.io/sects/boot-sector/pc-history/</guid>
       <description>Overview of PC history #  Before we dive into inspecting various components that participate in boot-time function of the OS, I would like to make a special overview of the history of PCs. This will make the understanding of BIOS as well as other &amp;ldquo;features&amp;rdquo; of the booting process much easier.
-The term PC was due to one mainstream computer from IBM called the IBM PC. BIOS in IBM PCs was the hardware abstraction layer that allowed OSes to perform hardware input/output functions independently of the actual hardware used in the system.</description>
+The term PC was due to one mainstream computer from IBM called the IBM PC. Nowadays the term &amp;ldquo;PC&amp;rdquo; most of the time refers to an x86 computer capable of running Windows, Linux.</description>
     </item>
     
     <item>
@@ -84,8 +84,8 @@ The term PC was due to one mainstream computer from IBM called the IBM PC. BIOS 
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>http://bumbread.github.io/sects/boot-sector/power-button/</guid>
-      <description>When the power button is hit.. #  .. A set of actions is performed by different components of your PC. The power button is connected to a motherboard (also called main board or system board) - the heart of your computer.
-Power on #  After you hit the button, the first thing motherboard tries is to provide various components with electrical power. However there may be various instabilities in the electrical current.</description>
+      <description>When the power button is hit.. #  .. your computer tries to start up and launch the OS. The power button is connected to a motherboard (also called main board or system board) - the heart of your computer.
+Power on #  After you hit the button, the first thing motherboard tries is to provide computer components with electrical power. It can not do it directly, i.e. connect the power button to the power supply, because if there is a voltage jump or another instability in current, this may easily kill the components inside the computer.</description>
     </item>
     
     <item>

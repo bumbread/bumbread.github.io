@@ -5,21 +5,21 @@
   <meta name="generator" content="Hugo 0.84.2" />
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="When the power button is hit.. #  .. A set of actions is performed by different components of your PC. The power button is connected to a motherboard (also called main board or system board) - the heart of your computer.
-Power on #  After you hit the button, the first thing motherboard tries is to provide various components with electrical power. However there may be various instabilities in the electrical current.">
+<meta name="description" content="When the power button is hit.. #  .. your computer tries to start up and launch the OS. The power button is connected to a motherboard (also called main board or system board) - the heart of your computer.
+Power on #  After you hit the button, the first thing motherboard tries is to provide computer components with electrical power. It can not do it directly, i.e. connect the power button to the power supply, because if there is a voltage jump or another instability in current, this may easily kill the components inside the computer.">
 <meta name="theme-color" content="#FFFFFF"><meta property="og:title" content="When the power button is hit.." />
-<meta property="og:description" content="When the power button is hit.. #  .. A set of actions is performed by different components of your PC. The power button is connected to a motherboard (also called main board or system board) - the heart of your computer.
-Power on #  After you hit the button, the first thing motherboard tries is to provide various components with electrical power. However there may be various instabilities in the electrical current." />
+<meta property="og:description" content="When the power button is hit.. #  .. your computer tries to start up and launch the OS. The power button is connected to a motherboard (also called main board or system board) - the heart of your computer.
+Power on #  After you hit the button, the first thing motherboard tries is to provide computer components with electrical power. It can not do it directly, i.e. connect the power button to the power supply, because if there is a voltage jump or another instability in current, this may easily kill the components inside the computer." />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="http://bumbread.github.io/sects/boot-sector/power-button/" /><meta property="article:section" content="sects" />
 
 
 
-<title>When the power button is hit.. | OS Dev</title>
+<title>When the power button is hit.. | OS development notes</title>
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" href="/favicon.png" type="image/x-icon">
 <link rel="stylesheet" href="/book.min.0072b4b06e277edeb4105457a66735e1d764f2b70566c56635cb2504cbcceed5.css" integrity="sha256-AHK0sG4nft60EFRXpmc14ddk8rcFZsVmNcslBMvM7tU=">
-<script defer src="/en.search.min.9e4e112595c8ef5c75fe97676ced6def34e7484b48b0e357cdf0f80b2f80e19e.js" integrity="sha256-nk4RJZXI71x1/pdnbO1t7zTnSEtIsONXzfD4Cy&#43;A4Z4="></script>
+<script defer src="/en.search.min.6484cfcc380c64ce8a26f3022951b1dc45b0277d0cafadc713d16c5070c0fe3d.js" integrity="sha256-ZITPzDgMZM6KJvMCKVGx3EWwJ30Mr63HE9FsUHDA/j0="></script>
 <!--
 Made with Book Theme
 https://github.com/alex-shpak/hugo-book
@@ -37,7 +37,7 @@ https://github.com/alex-shpak/hugo-book
         
   <nav>
 <h2 class="book-brand">
-  <a href="/"><span>OS Dev</span>
+  <a href="/"><span>OS development notes</span>
   </a>
 </h2>
 
@@ -138,29 +138,31 @@ https://github.com/alex-shpak/hugo-book
   When the power button is hit..
   <a class="anchor" href="#when-the-power-button-is-hit">#</a>
 </h1>
-<p>.. A set of actions is performed by different components of your PC. The power button is connected to a <strong>motherboard</strong> (also called <strong>main board</strong> or <strong>system board</strong>) - the heart of your computer.</p>
+<p>.. your computer tries to start up and launch the OS. The power button is connected to a <strong>motherboard</strong> (also called <strong>main board</strong> or <strong>system board</strong>) - the heart of your computer.</p>
 <h2 id="power-on">
   Power on
   <a class="anchor" href="#power-on">#</a>
 </h2>
-<p>After you hit the button, the first thing motherboard tries is to provide various components with electrical power. However there may be various instabilities in the electrical current. You would not like to burn up your CPU by providing too strong voltage to it.</p>
-<p>That&rsquo;s why the motherboard sends the signal to a power supply. The power supply&rsquo;s job is to ensure that the voltages are within the acceptable range (as per specification of the motherboard). After the voltages and currents have stabilized the power supply device sends <strong>Power Good</strong> signal back to the motherboard.</p>
-<p>Then the motherboard knows that it can power other hardware components without blowing them up. So it powers them up.</p>
+<p>After you hit the button, the first thing motherboard tries is to provide computer components with electrical power. It can not do it directly, i.e. connect the power button to the power supply, because if there is a voltage jump or another instability in current, this may easily kill the components inside the computer.</p>
+<p>That&rsquo;s why the motherboard sends the signal to a power supply. The power supply&rsquo;s job is to ensure that the voltages are within the acceptable range and the current is stabilized. After the voltages and currents have stabilized the power supply device sends <strong>Power Good</strong> signal back to the motherboard.</p>
+<p>Then the motherboard knows that it can power other hardware components without blowing them up. It transfers electrical power to other hardware devices, including the CPU.</p>
 <h2 id="cpu-initialization">
   CPU Initialization
   <a class="anchor" href="#cpu-initialization">#</a>
 </h2>
-<p>CPU is powered up. In case of x86 CPUs, after the power-up motherboard sends a signal to the <strong>reset#</strong> pin. What this does, is it restores the state of CPU into a known initial state. Namely it sets the values of registers to a certain state.</p>
-<p><strong>General purpose registers</strong> values are left undefined. <strong>EFLAGS</strong> register is initialized so that the lower 16 bits make up the value <code>0002h</code>. The other bits are undefined. <strong>Segment registers</strong> are zeroed-out.</p>
+<p>CPU is powered up. In case of x86 CPUs, on the power-up motherboard sends a signal to the <strong>reset#</strong> pin. This restores the state of CPU into a known initial state, defined in x86 specification.</p>
+<p><strong>General purpose registers</strong> values are left undefined. <strong>EFLAGS</strong> register is initialized so that the lower 16 bits make up the value <code>0002h</code> and the other bits are undefined. <strong>Segment registers</strong> are zeroed-out.</p>
 <p>What we&rsquo;re interested in is <strong>EIP</strong> register, responsible for keeping the address of the next instruction to be executed. We&rsquo;re also interested in the values of <strong>Code segment</strong> (which is zeroed out, as specified above), and <strong>Code segment base</strong> (which is a special hidden part of Code Segment).</p>
-<p>Without going into much detail the tuple <code>(EIP, CS, CS.base)</code> together make up the address <code>0xFFFFFFF0</code>. That location is called a <strong>reset vector</strong>, a.k.a. the address of the first instruction to be executed.</p>
+<p>Without going into much detail the tuple <code>(EIP, CS, CS.base)</code> together make up the address <code>0xFFFFFFF0</code> &ndash; it will contain the address of the very first instruction the processor executed. That location is called a <strong>reset vector</strong>.</p>
 <h2 id="bios">
   BIOS
   <a class="anchor" href="#bios">#</a>
 </h2>
-<p>The reset vector is not an address in RAM &ndash; at this stage the contents of RAM are basically undefined. But since all components are connected to the same <strong>Address Bus</strong>, the other hardware components can also be mapped to a certain address.</p>
-<p>The address <code>0xFFFFFFF0</code> points to the motherboard ROM (Read Only Memory). The motherboard contains a program called <strong>BIOS</strong> (stands for Basic Input Output System).</p>
-<p>BIOS performs the following functions:</p>
+<p>At this stage the contents of RAM are basically undefined. What is the first instruction the CPU executes?</p>
+<p>Basically, The reset vector is not an address in RAM &ndash; it actually points to a location in motherboard ROM. Since all components are connected to the same <strong>Address Bus</strong>, the various hardware components can also be mapped to a certain address in memory.</p>
+<p>The address <code>0xFFFFFFF0</code> points to the motherboard ROM (Read Only Memory). The motherboard ROM contains a program called <strong>BIOS</strong> (stands for Basic Input Output System).</p>
+<p>So the processor starts executing BIOS code.</p>
+<p>When executed BIOS performs the following functions:</p>
 <ul>
 <li>Initialize the hardware (Set up interrupt handles etc)</li>
 <li>Load the Operating System Bootloader</li>
@@ -173,8 +175,9 @@ https://github.com/alex-shpak/hugo-book
   Boot loader
   <a class="anchor" href="#boot-loader">#</a>
 </h2>
-<p>The operating system loading (booting) process is usually chained because of various size or hardware limitations. Typically a &ldquo;less-powerful&rdquo; loader loads a &ldquo;more-powerful&rdquo; loader into memory, which in turn loads &ldquo;even more powerful&rdquo; loader or loads the OS itself.</p>
-<p>The program that loads OS into memory is called <strong>Boot Loader</strong>. The part of the bootloader that is stored in the first 512 bytes of a hard drive is called <strong>Master Boot Record</strong> (MBR), and it is the code that gets loaded by the BIOS into the RAM.</p>
+<p>The operating system loading (booting) process is usually chained because of various size or hardware limitations. Typically a &ldquo;less-powerful&rdquo; loader loads a &ldquo;more-powerful&rdquo; loader into memory, which in turn loads &ldquo;even more powerful&rdquo; loader or loads the OS Kernel itself.</p>
+<p>The program that loads OS Kernel into memory and starts it up is called <strong>Boot Loader</strong>. Boot loader is usually a part of the OS, but it can be independent component, (for example GRUB is a program that can load one of multiple OSes on the same disk)</p>
+<p>The part of the bootloader that is stored in the first 512 bytes of a hard drive is called <strong>Master Boot Record</strong> (MBR), and it is the code that gets loaded by the BIOS into the RAM.</p>
 <p>After the boot loader has loaded the OS into RAM, it transfers the control flow to it. The OS kernel is running. The OS performs other (higher-level) hardware initialization functions, loads the drivers and the user configuration and launches few programs.</p>
 </article>
  

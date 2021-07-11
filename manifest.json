@@ -1,6 +1,6 @@
 {
-  "name": "OS Dev",
-  "short_name": "OS Dev",
+  "name": "OS development notes",
+  "short_name": "OS development notes",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
